@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<launch>
+  <param name="use_sim_time" value="true"/>
+  <arg default="/home/$(optenv USER NO_USER_ENV)/datasets/clt_datasets/clt_generated_dataset.bag" name="dataset_path"/>
+  <arg default="false" name="debug"/>
+  <arg default="true" name="publish"/>
+  <arg default="1.0" name="rate"/>
+  <arg default="250" name="particles"/>
+  <arg default="/home/$(optenv USER NO_USER_ENV)/datasets/pfuclt/" name="pfuclt_dataset_path"/>
+  <arg default="random_pfuclt.bag" name="pfuclt_dataset_bag"/>
+  <param name="num_robots" value="2"/>
+  <param name="num_targets" value="3"/>
+  <node args="--quiet --clock --rate=$(arg rate) $(arg dataset_path)" name="player" output="screen" pkg="rosbag" required="true" type="play"/>
+  <node args="--debug $(arg debug) --publish $(arg publish)" name="pfuclt" output="screen" pkg="pfuclt" type="pfuclt_node">
+    <param name="percentage_to_keep" value="50"/>
+    <param name="velocity_estimator_stack_size" value="10"/>
+    <param name="predict_model_stddev" value="30"/>
+    <param name="particles" value="$(arg particles)"/>
+    <param name="robot_id" value="1"/>
+    <param name="K" value="1"/>
+    <rosparam param="landmark_covariances">[0.02, 0.005, 0.002, 0.005, 0.005]</rosparam>
+    <rosparam param="initial_positions">[1.59987271991, 1.40374302827, 2.5700378735, 5.49363921094, -0.59842265407, 1.46064239195]</rosparam>
+    <rosparam param="initial_particles">[1.57987271991,1.61987271991,1.38374302827,1.42374302827,2.5500378735,2.5900378735,5.47363921094,5.51363921094,-0.61842265407,-0.57842265407,1.44064239195,1.48064239195,3.72461336739,3.76461336739,4.97549847623,5.01549847623,1.28161921251,1.32161921251,4.46828065829,4.50828065829,-2.80929332332,-2.76929332332,1.42251500543,1.46251500543,3.831721459,3.871721459,2.31256394155,2.35256394155,1.13191511095,1.17191511095]</rosparam>
+  </node>
+  <group ns="alphas">
+    <param name="robot1_alpha" value="0.015, 0.1, 0.5, 0.001"/>
+    <param name="robot2_alpha" value="0.015, 0.1, 0.5, 0.001"/>
+  </group>
+  <node args="--all --output-name=$(arg performer_path)/$(arg performer_file)" name="record_performance" pkg="rosbag" type="record"/>
+</launch>
