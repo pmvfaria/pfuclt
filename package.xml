@@ -1,18 +1,22 @@
 <?xml version="1.0"?>
 <package format="2">
- <name>pfuclt</name>
- <version>0.1.0</version>
- <description>
-    Perform the PFUCLT algorithm on Cooperative Localization and Tracking datasets.
- </description>
+    <name>pfuclt</name>
+    <version>0.1.0</version>
+    <description>
+        Perform the PFUCLT algorithm on Cooperative Localization and Tracking datasets.
+    </description>
 
- <license>GPLv3</license>
+    <license>GPLv3</license>
 
- <author email="guilherme.lawless@tecnico.ulisboa.pt">Guilherme Lawless</author>
- <maintainer email="guilherme.lawless@tecnico.ulisboa.pt">Guilherme Lawless</maintainer>
+    <author email="guilherme.lawless@tecnico.ulisboa.pt">Guilherme Lawless</author>
+    <maintainer email="guilherme.lawless@tecnico.ulisboa.pt">Guilherme Lawless</maintainer>
 
- <buildtool_depend>catkin</buildtool_depend>
+    <buildtool_depend>catkin</buildtool_depend>
 
- <depend>clt_msgs</depend>
+    <test_depend>gtest</test_depend>
 
+    <depend>roscpp</depend>
+    <depend>clt_msgs</depend>
+    <depend>tf2</depend>
+    <depend>tf2_ros</depend>
 </package>
