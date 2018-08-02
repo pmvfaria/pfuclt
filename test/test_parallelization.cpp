@@ -78,7 +78,7 @@ void timeResize() {
     ++i;
   }
 
-  std::cout << "RESIZE (x" << i << ") Serial - took " << watch.ElapsedMs() << " ms" << std::endl;
+  std::cout << "RESIZE (x" << i << ") Parallel - took " << watch.ElapsedMs() << " ms" << std::endl;
 }
 
 int main(int argc, char **argv) {
