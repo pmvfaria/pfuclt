@@ -4,7 +4,7 @@
 #include <vector>
 #include <ostream>
 #include <mutex>
-#include <parallel/algorithm>
+#include <parallel/types.h>
 #include "subparticle.hpp"
 
 namespace pfuclt::particle {

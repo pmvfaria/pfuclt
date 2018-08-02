@@ -15,7 +15,7 @@ int main(int argc, char **argv){
   std::cout << "Warmed up!" << std::endl;
 
   StopWatch watch;
-  for(uint i=0; i<100000; ++i)
+  for(uint i=0; i<10000; ++i)
     particles.normalizeWeights();
 
   std::cout << "Without parallel library - took " << watch.ElapsedMs() << " ms" << std::endl;

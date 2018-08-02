@@ -1,5 +1,8 @@
 #include "particle.hpp"
+#include <parallel/numeric>
+#include <parallel/algorithm>
 #include <numeric>
+#include <algorithm>
 
 namespace pfuclt::particle {
 
@@ -34,11 +37,10 @@ Particles &Particles::addTarget() {
 }
 
 WeightSubParticles &Particles::normalizeWeights() {
-  //std::lock_guard<std::mutex> guard(weights_mutex_);
-  //std::accumulate(weights.begin(), weights.end(), 0.0);
 
-  std::for_each(weights.begin(), weights.end(), []( double& w ) { w+=1.0; });
-  //__gnu_parallel::for_each(weights.begin(), weights.end(), []( double& w ) { w+=1.0; }, tag);
+  // Find the sum of weights
+  const auto sum_weights = std::accumulate(weights.begin(), weights.end(), 0.0);
+  std::transform(weights.begin(), weights.end(), weights.begin(), [sum_weights](auto w) { return w / sum_weights; });
 
   return weights;
 }
@@ -48,7 +50,9 @@ WeightSubParticles &Particles::normalizeWeights(const __gnu_parallel::_Paralleli
   //std::accumulate(weights.begin(), weights.end(), 0.0);
 
   //std::for_each(weights.begin(), weights.end(), []( double& w ) { w+=1.0; });
-  __gnu_parallel::for_each(weights.begin(), weights.end(), []( double& w ) { w+=1.0; }, tag);
+  const auto sum_weights = __gnu_parallel::accumulate(weights.begin(), weights.end(), 0.0, tag);
+  __gnu_parallel::transform(weights.begin(), weights.end(), weights.begin(),
+                            [sum_weights](auto w) { return w / sum_weights; });
 
   return weights;
 }
