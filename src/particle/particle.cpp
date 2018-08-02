@@ -31,7 +31,7 @@ Particles &Particles::removeTarget(const unsigned int t) {
   return removeTarget(targets.begin() + t);
 }
 
-Particles &Particles::addTarget() {
+Particles &Particles::addTarget() noexcept{
   targets.emplace_back(TargetSubParticles(num_particles, TargetSubParticle(0.0)));
   return *this;
 }

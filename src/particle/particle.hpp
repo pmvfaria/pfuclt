@@ -54,7 +54,7 @@ class Particles {
   /*
    * Adds a set of target sub-particles at the back of the targets
    */
-  Particles &addTarget();
+  Particles &addTarget() noexcept;
 
   /*
    * Normalizes the weights of the specified particle set
