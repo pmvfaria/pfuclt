@@ -43,7 +43,7 @@ WeightSubParticles &Particles::normalizeWeights() {
     throw std::range_error("Weights have a sum of 0.0, not possible to normalize");
   }
 
-  std::transform(weights.begin(), weights.end(), weights.begin(), [sum_weights](auto w) { return w / sum_weights; });
+  std::transform(weights.begin(), weights.end(), weights.begin(), [sum_weights](auto &w) { return w / sum_weights; });
 
   return weights;
 }
@@ -55,7 +55,7 @@ WeightSubParticles &Particles::normalizeWeights(const __gnu_parallel::_Paralleli
     throw std::range_error("Weights have a sum of 0.0, not possible to normalize");
   }
   __gnu_parallel::transform(weights.begin(), weights.end(), weights.begin(),
-                            [sum_weights](auto w) { return w / sum_weights; });
+                            [sum_weights](auto &w) { return w / sum_weights; });
 
   return weights;
 }
