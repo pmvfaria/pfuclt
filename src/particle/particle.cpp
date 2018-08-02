@@ -36,7 +36,7 @@ Particles &Particles::addTarget() noexcept{
   return *this;
 }
 
-WeightSubParticles &Particles::normalizeWeights() {
+Particles &Particles::normalizeWeights() {
 
   const auto sum_weights = std::accumulate(weights.begin(), weights.end(), 0.0);
   if(sum_weights==0.0){
@@ -45,10 +45,10 @@ WeightSubParticles &Particles::normalizeWeights() {
 
   std::transform(weights.begin(), weights.end(), weights.begin(), [sum_weights](auto &w) { return w / sum_weights; });
 
-  return weights;
+  return *this;
 }
 
-WeightSubParticles &Particles::normalizeWeights(const __gnu_parallel::_Parallelism tag) {
+Particles &Particles::normalizeWeights(const __gnu_parallel::_Parallelism tag) {
 
   const auto sum_weights = __gnu_parallel::accumulate(weights.begin(), weights.end(), 0.0, tag);
   if(sum_weights==0.0){
@@ -57,7 +57,7 @@ WeightSubParticles &Particles::normalizeWeights(const __gnu_parallel::_Paralleli
   __gnu_parallel::transform(weights.begin(), weights.end(), weights.begin(),
                             [sum_weights](auto &w) { return w / sum_weights; });
 
-  return weights;
+  return *this;
 }
 
 std::ostream &operator<<(std::ostream &os, const pfuclt::particle::Particles &p){

@@ -60,13 +60,14 @@ class Particles {
   /** \brief Normalizes the weights, each to 1/num_particles
     * \throws std::range_error if the sum of weights is 0.0
     */
-  WeightSubParticles &normalizeWeights();
+  Particles &normalizeWeights();
 
   /** \brief (Parallelized version) Normalizes the weights, each to 1/num_particles
     * \throws std::range_error if the sum of weights is 0.0
     * \param tag Parallelization tag from __gnu_parallel
     */
-  WeightSubParticles &normalizeWeights(__gnu_parallel::_Parallelism tag);
+  Particles &normalizeWeights(__gnu_parallel::_Parallelism tag);
+
 
 };
 std::ostream &operator<<(std::ostream &os, const pfuclt::particle::Particles &p);
