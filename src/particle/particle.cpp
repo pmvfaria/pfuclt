@@ -7,10 +7,10 @@
 namespace pfuclt::particle {
 
 Particles::Particles(const unsigned int num_particles, const unsigned int num_robots, const unsigned int num_targets) :
-    num_particles_(num_particles),
     robots(num_robots, RobotSubParticles(num_particles, RobotSubParticle(0.0))),
     targets(num_targets, TargetSubParticles(num_particles, TargetSubParticle(0.0))),
-    weights(num_particles, 0.0) {
+    weights(num_particles, 0.0),
+    num_particles(num_particles) {
   // Nothing to do
 }
 
@@ -32,25 +32,28 @@ Particles &Particles::removeTarget(const unsigned int t) {
 }
 
 Particles &Particles::addTarget() {
-  targets.emplace_back(TargetSubParticles(num_particles_, TargetSubParticle(0.0)));
+  targets.emplace_back(TargetSubParticles(num_particles, TargetSubParticle(0.0)));
   return *this;
 }
 
 WeightSubParticles &Particles::normalizeWeights() {
 
-  // Find the sum of weights
   const auto sum_weights = std::accumulate(weights.begin(), weights.end(), 0.0);
+  if(sum_weights==0.0){
+    throw std::range_error("Weights have a sum of 0.0, not possible to normalize");
+  }
+
   std::transform(weights.begin(), weights.end(), weights.begin(), [sum_weights](auto w) { return w / sum_weights; });
 
   return weights;
 }
 
 WeightSubParticles &Particles::normalizeWeights(const __gnu_parallel::_Parallelism tag) {
-  //std::lock_guard<std::mutex> guard(weights_mutex_);
-  //std::accumulate(weights.begin(), weights.end(), 0.0);
 
-  //std::for_each(weights.begin(), weights.end(), []( double& w ) { w+=1.0; });
   const auto sum_weights = __gnu_parallel::accumulate(weights.begin(), weights.end(), 0.0, tag);
+  if(sum_weights==0.0){
+    throw std::range_error("Weights have a sum of 0.0, not possible to normalize");
+  }
   __gnu_parallel::transform(weights.begin(), weights.end(), weights.begin(),
                             [sum_weights](auto w) { return w / sum_weights; });
 

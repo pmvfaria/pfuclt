@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <numeric>
 #include <ostream>
+#include <cmath>
 
 #include "particle/subparticle.hpp"
 #include "particle/particle.hpp"
@@ -62,6 +64,14 @@ TEST(Particle, cornerCases){ /* NOLINT */
 
   std::ostringstream oss;
   EXPECT_NO_THROW(oss << p_empty << std::endl);
+
+  // Division by zero in normalizing particle weights
+  Particles p(10, 1, 2);
+  p.weights.assign(p.num_particles, 0.0);
+  EXPECT_THROW(p.normalizeWeights(), std::range_error);
+
+  // Should keep their value of zero
+  EXPECT_EQ(p.weights[0], 0.0);
 }
 
 } // namespace pfuclt:testing

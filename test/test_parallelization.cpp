@@ -6,6 +6,7 @@
 int main(int argc, char **argv){
 
   ::pfuclt::particle::Particles particles(10000, 5, 2);
+  particles.weights.assign(particles.num_particles, 1.0);
 
   std::cout << "Warming up..." << std::endl;
 

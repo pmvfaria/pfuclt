@@ -4,6 +4,7 @@
 #include <vector>
 #include <ostream>
 #include <mutex>
+#include <atomic>
 #include <parallel/types.h>
 #include "subparticle.hpp"
 
@@ -16,12 +17,12 @@ namespace pfuclt::particle {
 class Particles {
  private:
   std::mutex weights_mutex_;
-  unsigned int num_particles_;
 
  public:
   std::vector<RobotSubParticles> robots;
   std::vector<TargetSubParticles> targets;
   WeightSubParticles weights;
+  std::atomic_uint_fast16_t num_particles;
 
   // Delete some constructors and operators
   // Default constructor
