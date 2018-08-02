@@ -26,9 +26,9 @@ TEST(Particle, creation){ /* NOLINT */
 
   // Number of particles in each sub-particle set
   EXPECT_TRUE(std::all_of(particles.robots.begin(), particles.robots.end(),
-                          [](const RobotSubParticles& sp) { return sp.size() == num_particles; } ));
+                          [](const auto& sp) { return sp.size() == num_particles; } ));
   EXPECT_TRUE(std::all_of(particles.targets.begin(), particles.targets.end(),
-                          [](const TargetSubParticles& sp) { return sp.size() == num_particles; } ));
+                          [](const auto& sp) { return sp.size() == num_particles; } ));
   EXPECT_EQ(num_particles, particles.weights.size());
 
   std::ostringstream oss;

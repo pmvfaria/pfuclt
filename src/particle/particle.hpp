@@ -19,18 +19,19 @@ class Particles {
   std::mutex weights_mutex_;
 
  public:
+  size_t num_particles;
   std::vector<RobotSubParticles> robots;
   std::vector<TargetSubParticles> targets;
   WeightSubParticles weights;
-  std::atomic_uint_fast16_t num_particles;
 
   // Delete some constructors and operators
-  // Default constructor
   Particles() = delete;
-  // Copy constructor
+  // Disable copying
   Particles(const Particles&) = delete;
-  // Assignment operator
-  Particles &operator=(const Particles&) = delete;
+  Particles& operator=(const Particles&) = delete;
+
+  // Enable moving
+  Particles(Particles &&other) noexcept;
 
   /** \brief Creates a particle set with the options defined by the arguments
     * \details All particle values are initialized to 0.0, including weights
@@ -38,39 +39,44 @@ class Particles {
     * \param num_robots The number of robot sub-particle sets
     * \param num_targets The number of target sub-particle sets
     */
-  Particles(unsigned int num_particles, unsigned int num_robots, unsigned int num_targets);
+  Particles(size_t num_particles, size_t num_robots, size_t num_targets);
 
   /** \brief Remove target sub-particles by iterator point to it
-    * \param t iterator pointing to target to remove
+    * \param t rvalue iterator to target to remove
     * \throws std::out_of_range if iterator can't be de-referenced or outside of targets range
     */
-  Particles &removeTarget(std::vector<TargetSubParticles>::iterator t);
+  Particles& removeTarget(const std::vector<TargetSubParticles>::iterator& t);
 
   /** \brief Remove target sub-particles by its index
     * \param t 0-indexed index of the target to remove
     * \throws std::out_of_range if target does not exist
     */
-  Particles &removeTarget(unsigned int t);
+  Particles& removeTarget(const size_t& t);
 
   /** \brief Adds a set of target sub-particles at the back of the targets
     * \attention Has noexcept (will terminate if throwing)
     */
-  Particles &addTarget() noexcept;
+  Particles& addTarget() noexcept;
 
   /** \brief Normalizes the weights, each to 1/num_particles
     * \throws std::range_error if the sum of weights is 0.0
     */
-  Particles &normalizeWeights();
+  Particles& normalizeWeights();
 
   /** \brief (Parallelized version) Normalizes the weights, each to 1/num_particles
     * \throws std::range_error if the sum of weights is 0.0
     * \param tag Parallelization tag from __gnu_parallel
     */
-  Particles &normalizeWeights(__gnu_parallel::_Parallelism tag);
+  Particles& normalizeWeights(const __gnu_parallel::_Parallelism& tag);
 
-
+  /**
+    * \brief Resize all sub-particle sets
+    * \details If resizing to a larger number of particles, the new ones are initialized to 0.0
+    * \param num_particles The desired number of particles
+   */
+  Particles& resize(const size_t& num_particles);
 };
-std::ostream &operator<<(std::ostream &os, const pfuclt::particle::Particles &p);
+std::ostream& operator<<(std::ostream &os, const pfuclt::particle::Particles &p);
 
 } // namespace pfuclt::particle
 

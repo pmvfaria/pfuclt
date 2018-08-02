@@ -1,20 +1,31 @@
-#include "particle/particle.hpp"
-#include "thirdparty/stopwatch/StopWatch.h"
-
+#include <random>
 #include <iostream>
+#include <algorithm>
+#include <parallel/algorithm>
 
-int main(int argc, char **argv){
+#include "thirdparty/stopwatch/StopWatch.h"
+#include "particle/particle.hpp"
 
+::pfuclt::particle::Particles getParticles(){
   ::pfuclt::particle::Particles particles(10000, 5, 2);
   particles.weights.assign(particles.num_particles, 1.0);
 
+  return particles;
+}
+
+void warmUp() {
   std::cout << "Warming up..." << std::endl;
+  auto particles = getParticles();
   for(uint i=0; i<2000; ++i)
-    particles.normalizeWeights();
+    particles.normalizeWeights(__gnu_parallel::parallel_balanced);
 
   std::cout << "Warmed up!" << std::endl;
+}
 
+void timeNormalizeWeights() {
+  auto particles = getParticles();
   StopWatch watch;
+
   for(uint i=0; i<10000; ++i) {
     try {
       particles.normalizeWeights();
@@ -23,8 +34,7 @@ int main(int argc, char **argv){
       std::cout<<"caught"<<std::endl;
     }
   }
-
-  std::cout << "Without parallel library - took " << watch.ElapsedMs() << " ms" << std::endl;
+  std::cout << "NORMALIZE Serial - took " << watch.ElapsedMs() << " ms" << std::endl;
 
   watch.Restart();
   for(uint i=0; i<10000; ++i) {
@@ -35,8 +45,7 @@ int main(int argc, char **argv){
       std::cout<<"caught"<<std::endl;
     }
   }
-
-  std::cout << "Parallel (balanced) - took " << watch.ElapsedMs() << " ms" << std::endl;
+  std::cout << "NORMALIZE Parallel (balanced) - took " << watch.ElapsedMs() << " ms" << std::endl;
 
   watch.Restart();
   for(uint i=0; i<10000; ++i) {
@@ -47,8 +56,36 @@ int main(int argc, char **argv){
       std::cout<<"caught"<<std::endl;
     }
   }
+  std::cout << "NORMALIZE Parallel (unbalanced) - took " << watch.ElapsedMs() << " ms" << std::endl;
+}
 
-  std::cout << "Parallel (unbalanced) - took " << watch.ElapsedMs() << " ms" << std::endl;
+void timeResize() {
+  auto particles = getParticles();
+  StopWatch watch;
+
+  std::vector<size_t> resize_numbers(1000000);
+  __gnu_parallel::generate(resize_numbers.begin(), resize_numbers.end(), [n = 0]() mutable { return n++; });
+
+  unsigned int i=0;
+  watch.Restart();
+  for(const auto& num: resize_numbers) {
+    particles.resize(num);
+    ++i;
+  }
+  std::reverse(resize_numbers.begin(), resize_numbers.end());
+  for(const auto& num: resize_numbers){
+    particles.resize(num);
+    ++i;
+  }
+
+  std::cout << "RESIZE (x" << i << ") Serial - took " << watch.ElapsedMs() << " ms" << std::endl;
+}
+
+int main(int argc, char **argv) {
+
+  warmUp();
+  timeNormalizeWeights();
+  timeResize();
 
   return EXIT_SUCCESS;
 }
