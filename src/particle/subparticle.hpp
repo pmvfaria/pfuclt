@@ -26,12 +26,12 @@ class RobotSubParticle: public SubParticle<3>{
  public:
   RobotSubParticle(double x, double y, double theta) : SubParticle({x, y, theta}) { };
 
-  const double x() const { return p_[0]; };
-  const double y() const { return p_[1]; };
-  const double theta() const { return p_[2]; };
-  double& x() { return p_[0]; };
-  double& y() { return p_[1]; };
-  double& theta() { return p_[2]; };
+  inline const double x() const noexcept { return p_[0]; };
+  inline const double y() const noexcept { return p_[1]; };
+  inline const double theta() const noexcept { return p_[2]; };
+  inline double& x() noexcept { return p_[0]; };
+  inline double& y() noexcept { return p_[1]; };
+  inline double& theta() noexcept { return p_[2]; };
 };
 
 class TargetSubParticle: public SubParticle<3>{
@@ -41,12 +41,12 @@ class TargetSubParticle: public SubParticle<3>{
  public:
   TargetSubParticle(double x, double y, double z) : SubParticle({x, y, z}) { };
 
-  const double x() const { return p_[0]; };
-  const double y() const { return p_[1]; };
-  const double theta() const { return p_[2]; };
-  double& x() { return p_[0]; };
-  double& y() { return p_[1]; };
-  double& theta() { return p_[2]; };
+  inline const double x() const noexcept { return p_[0]; };
+  inline const double y() const noexcept { return p_[1]; };
+  inline const double theta() const noexcept { return p_[2]; };
+  inline double& x() noexcept { return p_[0]; };
+  inline double& y() noexcept { return p_[1]; };
+  inline double& theta() noexcept { return p_[2]; };
 };
 
 typedef std::vector<RobotSubParticle> RobotSubParticles;
