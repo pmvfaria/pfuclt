@@ -4,10 +4,10 @@
 
 #include "odometry.hpp"
 
-namespace pfuclt::data::odometry{
+namespace pfuclt::sensor::odometry{
 
-OdometryData fromCustomMsg(const clt_msgs::CustomOdometryConstPtr &msg){
-  return OdometryData{msg->rot1, msg->rot2, msg->translation};
+OdometryMeasurement fromCustomMsg(const clt_msgs::CustomOdometryConstPtr &msg, const uint8_t& robot_id){
+  return OdometryMeasurement{msg->rot1, msg->rot2, msg->translation, robot_id};
 }
 
 OdometryHandler::OdometryHandler(unsigned long queue_size) {
@@ -18,4 +18,5 @@ OdometryHandler::OdometryHandler(unsigned long queue_size) {
 void OdometryHandler::callback(const clt_msgs::CustomOdometryConstPtr &msg) {
   queue_.emplace_back(fromCustomMsg(msg));
 }
-}
+
+} // namespace pfuclt::sensor::odometry

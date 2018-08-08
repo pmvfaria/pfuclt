@@ -1,25 +1,26 @@
 //TODO copyright
 
-#ifndef PFUCLT_ODOMETRY_H
-#define PFUCLT_ODOMETRY_H
+#ifndef PFUCLT_ODOMETRY_HPP
+#define PFUCLT_ODOMETRY_HPP
 
 #include <vector>
 #include <ros/ros.h>
 #include <clt_msgs/CustomOdometry.h>
 
-namespace pfuclt::data::odometry{
+namespace pfuclt::sensor::odometry{
 
-struct OdometryData{
+struct OdometryMeasurement{
   double initial_rotation, translation, final_translation;
+  uint8_t robot_id;
 };
 
-OdometryData fromCustomMsg(const clt_msgs::CustomOdometryConstPtr& msg);
+OdometryMeasurement fromCustomMsg(const clt_msgs::CustomOdometryConstPtr& msg);
 
 
 class OdometryHandler{
 
  private:
-  std::vector<OdometryData> queue_;
+  std::vector<OdometryMeasurement> queue_;
 
  public:
   OdometryHandler() = delete;
@@ -29,6 +30,6 @@ class OdometryHandler{
 
 };
 
-} // namespace pfuclt::data
+} // namespace pfuclt::sensor::odometry
 
-#endif //PFUCLT_ODOMETRY_H
+#endif //PFUCLT_ODOMETRY_HPP

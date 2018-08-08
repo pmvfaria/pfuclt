@@ -40,3 +40,7 @@ If you use PF-UCLT on an academic work, please cite:
 ## Documentation
 
 Not very detailed but we have doxygen auto-generated documentation in https://guilhermelawless.github.io/pfuclt_omni_dataset/doc/html/c++/index.html
+
+## Third Party Libraries
+
+- [StopWatch](https://github.com/KjellKod/StopWatch) - timing utilities

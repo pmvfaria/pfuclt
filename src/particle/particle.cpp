@@ -77,7 +77,7 @@ Particles& Particles::resize(const size_t& num_particles) {
   return *this;
 }
 
-std::ostream &operator<<(std::ostream &os, const pfuclt::particle::Particles &p){
+std::ostream &operator<<(std::ostream &os, const Particles &p){
   return os << "Particle set with " << p.robots.size() << " robot sub-particles, " << p.targets.size()
             << " target sub-particles, with a total of " << p.weights.size() << " particles";
 }

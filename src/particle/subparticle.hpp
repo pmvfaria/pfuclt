@@ -1,5 +1,5 @@
-#ifndef PFUCLT_SUBPARTICLE_H
-#define PFUCLT_SUBPARTICLE_H
+#ifndef PFUCLT_SUBPARTICLE_HPP
+#define PFUCLT_SUBPARTICLE_HPP
 
 #include <vector>
 #include <array>
@@ -55,4 +55,4 @@ typedef std::vector<double> WeightSubParticles;
 
 } // namespace pfuclt::particle
 
-#endif //PFUCLT_SUBPARTICLE_H
+#endif //PFUCLT_SUBPARTICLE_HPP
