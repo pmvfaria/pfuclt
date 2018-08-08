@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(pfuclt)
 
 # Warn to add optimizations, remove when done
-message(WARNING "Rember to change to Release and add -O3 optimizations to compiler")
+message(AUTHOR_WARNING "Rember to change to Release and add -O3 optimizations to compiler")
 
 # Debug until ready for release
 if (NOT CMAKE_BUILD_TYPE)
@@ -64,11 +64,15 @@ include_directories(
 # StopWatch library
 add_library(stopwatch src/thirdparty/stopwatch/StopWatch.cpp)
 
-add_executable(pfuclt src/pfuclt/pfuclt.cpp src/data/odometry.cpp src/particle/particle.cpp)
+add_executable(pfuclt src/pfuclt/pfuclt.cpp src/sensor/odometry.cpp src/particle/particle.cpp src/map/landmark_map.cpp src/map/landmark_map.hpp)
 target_link_libraries(pfuclt ${catkin_LIBRARIES})
 
 add_executable(test_pararallelization test/test_parallelization.cpp src/particle/particle.cpp)
 target_link_libraries(test_pararallelization ${catkin_LIBRARIES} stopwatch)
 
+# Google Tests
 catkin_add_gtest(test_particles test/test_particle.cpp src/particle/particle.cpp src/particle/subparticle.hpp)
+target_link_libraries(test_particles ${catkin_LIBRARIES})
+
+catkin_add_gtest(test_landmark_map test/test_landmark_map.cpp src/map/landmark_map.cpp src/map/landmark_map.hpp)
 target_link_libraries(test_particles ${catkin_LIBRARIES})
