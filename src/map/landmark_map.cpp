@@ -3,10 +3,11 @@
 //
 
 #include "landmark_map.hpp"
+#include <ros/param.h>
 
 namespace pfuclt::map{
 
-bool Landmark::isInside(const LandmarkMap &map) {
+bool Landmark::isInside(const LandmarkMap &map) const{
   return map.contains(x, y);
 }
 

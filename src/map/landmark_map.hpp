@@ -13,18 +13,18 @@ namespace pfuclt::map {
 class LandmarkMap;
 
 struct Landmark {
-  int id;
-  double x, y;
+  const int id;
+  const double x, y;
 
-  bool isInside(const LandmarkMap& map);
+  bool isInside(const LandmarkMap& map) const;
 };
 std::ostream& operator<<(std::ostream &os, const Landmark &p);
 
 class LandmarkMap {
  private:
+  const double center_x_, center_y_;
   double half_x_, half_y_;
   double size_x_, size_y_;
-  double center_x_, center_y_;
   double limit_x_left_, limit_x_right_, limit_y_up_, limit_y_down_;
 
  public:

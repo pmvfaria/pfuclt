@@ -11,7 +11,6 @@ namespace pfuclt::sensor::odometry{
 
 struct OdometryMeasurement{
   double initial_rotation, translation, final_translation;
-  uint8_t robot_id;
 };
 
 OdometryMeasurement fromCustomMsg(const clt_msgs::CustomOdometryConstPtr& msg);
@@ -21,12 +20,12 @@ class OdometryHandler{
 
  private:
   std::vector<OdometryMeasurement> queue_;
+  const uint8_t robot_id_;
 
  public:
   OdometryHandler() = delete;
-  OdometryHandler(unsigned long queue_size);
+  OdometryHandler(const std::size_t& queue_size, const uint8_t& robot_id);
   void callback(const clt_msgs::CustomOdometryConstPtr& msg);
-
 
 };
 

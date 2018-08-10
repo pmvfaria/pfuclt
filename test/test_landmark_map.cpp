@@ -1,8 +1,5 @@
 #include <gtest/gtest.h>
-#include <algorithm>
-#include <numeric>
 #include <ostream>
-#include <cmath>
 
 #include "map/landmark_map.hpp"
 

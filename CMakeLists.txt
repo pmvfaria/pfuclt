@@ -29,7 +29,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.1)
         message(FATAL_ERROR "GNU g++ minimum version 8.1 is required")
     else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
         set(CMAKE_CXX_STANDARD 17)
         set(CMAKE_CXX_STANDARD_REQUIRED ON)
         add_definitions(-DCOMPILEDWITHC17)
@@ -64,7 +64,7 @@ include_directories(
 # StopWatch library
 add_library(stopwatch src/thirdparty/stopwatch/StopWatch.cpp)
 
-add_executable(pfuclt src/pfuclt/pfuclt.cpp src/sensor/odometry.cpp src/particle/particle.cpp src/map/landmark_map.cpp src/map/landmark_map.hpp)
+add_executable(pfuclt src/pfuclt/pfuclt.cpp src/sensor/odometry_data.cpp src/particle/particle.cpp src/map/landmark_map.cpp src/map/landmark_map.hpp src/map/map_ros.cpp src/map/map_ros.hpp)
 target_link_libraries(pfuclt ${catkin_LIBRARIES})
 
 add_executable(test_pararallelization test/test_parallelization.cpp src/particle/particle.cpp)
