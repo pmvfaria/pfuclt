@@ -1,20 +1,35 @@
-#include "sensor/odometry_data.hpp"
-#include "map/map_ros.hpp"
+//
+// Created by glawless on 8/21/18.
+//
 
-int main(int argc, char **argv){
+#include "pfuclt.hpp"
 
-  using namespace pfuclt;
+namespace pfuclt::algorithm {
 
-  ros::init(argc, argv, "pfuclt");
-  ros::NodeHandle nh_world("/world");
+PFUCLT::PFUCLT(const uint8_t &self_robot_id) {
 
-  map::LandmarkMap map(0, 0, 12, 10);
-  map.setAutoExpand(false);
+  // Get landmarks map
+  const auto num_landmarks = this->getLandmarkMap();
+  ROS_ASSERT(num_landmarks > 0);
 
-  const auto num_landmarks = map::landmarksFromParameter(map, "landmarks", nh_world);
-  ROS_INFO_STREAM( " Added " << num_landmarks << " landmarks");
+  ROS_INFO_STREAM("Added " << num_landmarks << " landmarks");
+  ROS_INFO_STREAM(*map_);
 
-  ROS_INFO_STREAM(map);
+  // Create and initialize particles
+  int num_particles, num_robots, num_targets;
+  ROS_ASSERT_MSG(pnh_.getParam("particles", num_particles), "Parameter num_particles is required");
+  ROS_ASSERT_MSG(nh_.getParam("num_robots", num_robots), "Parameter num_robots is required");
+  ROS_ASSERT_MSG(nh_.getParam("num_targets", num_targets), "Parameter num_targets is required");
 
-  return EXIT_SUCCESS;
+  particles_ = std::make_unique<::pfuclt::particle::Particles>(num_particles, num_robots, num_targets);
+
+  auto initializedParticlesFromParameter = this->initializeParticles();
+  if (initializedParticlesFromParameter)
+    ROS_INFO("Initialized particles using parameters");
+  else
+    ROS_INFO("Initialized particles randomly");
+
+  ROS_INFO_STREAM(*particles_);
 }
+
+} // namespace pfuclt::algorithm

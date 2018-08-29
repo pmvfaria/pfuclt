@@ -6,7 +6,7 @@
 
 namespace pfuclt::sensor::odometry{
 
-OdometryMeasurement fromCustomMsg(const clt_msgs::CustomOdometryConstPtr &msg){
+OdometryMeasurement fromRosCustomMsg(const clt_msgs::CustomOdometryConstPtr &msg){
   return OdometryMeasurement{msg->rot1, msg->rot2, msg->translation};
 }
 
@@ -16,7 +16,7 @@ OdometryHandler::OdometryHandler(const std::size_t& queue_size, const uint8_t& r
 }
 
 void OdometryHandler::callback(const clt_msgs::CustomOdometryConstPtr &msg) {
-  queue_.emplace_back(fromCustomMsg(msg));
+  queue_.emplace_back(fromRosCustomMsg(msg));
 }
 
 } // namespace pfuclt::sensor::odometry

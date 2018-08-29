@@ -8,10 +8,10 @@
   <arg default="250" name="particles"/>
   <arg default="/home/$(optenv USER NO_USER_ENV)/datasets/pfuclt/" name="pfuclt_dataset_path"/>
   <arg default="random_pfuclt.bag" name="pfuclt_dataset_bag"/>
-  <param name="num_robots" value="2"/>
-  <param name="num_targets" value="3"/>
+  <param name="num_robots" value="3"/>
+  <param name="num_targets" value="2"/>
   <node args="--quiet --clock --rate=$(arg rate) $(arg dataset_path)" name="player" output="screen" pkg="rosbag" required="true" type="play"/>
-  <node args="--debug $(arg debug) --publish $(arg publish)" name="pfuclt" output="screen" pkg="pfuclt" type="pfuclt_node">
+  <node args="--debug $(arg debug) --publish $(arg publish)" name="pfuclt_node" output="screen" pkg="pfuclt" required="true" type="pfuclt_node">
     <param name="percentage_to_keep" value="50"/>
     <param name="velocity_estimator_stack_size" value="10"/>
     <param name="predict_model_stddev" value="30"/>
@@ -19,12 +19,12 @@
     <param name="robot_id" value="1"/>
     <param name="K" value="1"/>
     <rosparam param="landmark_covariances">[0.02, 0.005, 0.002, 0.005, 0.005]</rosparam>
-    <rosparam param="initial_positions">[1.59987271991, 1.40374302827, 2.5700378735, 5.49363921094, -0.59842265407, 1.46064239195]</rosparam>
-    <rosparam param="initial_particles">[1.57987271991,1.61987271991,1.38374302827,1.42374302827,2.5500378735,2.5900378735,5.47363921094,5.51363921094,-0.61842265407,-0.57842265407,1.44064239195,1.48064239195,3.72461336739,3.76461336739,4.97549847623,5.01549847623,1.28161921251,1.32161921251,4.46828065829,4.50828065829,-2.80929332332,-2.76929332332,1.42251500543,1.46251500543,3.831721459,3.871721459,2.31256394155,2.35256394155,1.13191511095,1.17191511095]</rosparam>
+    <rosparam param="init_robot_particles">[[[5.368755308669976, 5.468755308669976], [0.8127957085391919, 0.912795708539192], [-2.5059709093022082, -2.4059709093022086]], [[6.663762799370575, 6.763762799370575], [-1.4407420279220837, -1.3407420279220836], [-2.705163923295181, -2.6051639232951813]], [[1.3855441697220263, 1.4855441697220264], [1.649143246916969, 1.749143246916969], [2.357210808207175, 2.457210808207175]]]</rosparam>
+    <rosparam param="init_target_particles">[[[5.151512923788788, 5.251512923788788], [-3.1257516368808855, -3.025751636880886], [1.0874927010326905, 1.1874927010326906]], [[5.302821131816061, 5.402821131816061], [4.330775932524046, 4.430775932524045], [1.357055347169877, 1.457055347169877]]]</rosparam>
   </node>
   <group ns="alphas">
     <param name="robot1_alpha" value="0.015, 0.1, 0.5, 0.001"/>
     <param name="robot2_alpha" value="0.015, 0.1, 0.5, 0.001"/>
+    <param name="robot3_alpha" value="0.015, 0.1, 0.5, 0.001"/>
   </group>
-  <node args="--all --output-name=$(arg performer_path)/$(arg performer_file)" name="record_performance" pkg="rosbag" type="record"/>
 </launch>

@@ -64,14 +64,16 @@ include_directories(
 # StopWatch library
 add_library(stopwatch src/thirdparty/stopwatch/StopWatch.cpp)
 
-add_executable(pfuclt src/pfuclt/pfuclt.cpp src/sensor/odometry_data.cpp src/particle/particle.cpp src/map/landmark_map.cpp src/map/landmark_map.hpp src/map/map_ros.cpp src/map/map_ros.hpp)
-target_link_libraries(pfuclt ${catkin_LIBRARIES})
+add_executable(pfuclt_node src/ros/pfuclt_node.cpp src/sensor/odometry_data.cpp src/particle/particles.cpp
+        src/map/landmark_map.cpp src/map/landmark_map.hpp src/map/map_ros.cpp src/map/map_ros.hpp
+        src/sensor/landmark_data.cpp src/pfuclt/pfuclt.cpp src/pfuclt/pfuclt.hpp src/pfuclt/initialize.cpp src/pfuclt/state.cpp src/pfuclt/state.hpp)
+target_link_libraries(pfuclt_node ${catkin_LIBRARIES})
 
-add_executable(test_pararallelization test/test_parallelization.cpp src/particle/particle.cpp)
+add_executable(test_pararallelization test/test_parallelization.cpp src/particle/particles.cpp)
 target_link_libraries(test_pararallelization ${catkin_LIBRARIES} stopwatch)
 
 # Google Tests
-catkin_add_gtest(test_particles test/test_particle.cpp src/particle/particle.cpp src/particle/subparticle.hpp)
+catkin_add_gtest(test_particles test/test_particle.cpp src/particle/particles.cpp src/particle/subparticle.hpp)
 target_link_libraries(test_particles ${catkin_LIBRARIES})
 
 catkin_add_gtest(test_landmark_map test/test_landmark_map.cpp src/map/landmark_map.cpp src/map/landmark_map.hpp)

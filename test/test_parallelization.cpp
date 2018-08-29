@@ -4,7 +4,7 @@
 #include <parallel/algorithm>
 
 #include "thirdparty/stopwatch/StopWatch.h"
-#include "particle/particle.hpp"
+#include "particle/particles.hpp"
 
 ::pfuclt::particle::Particles getParticles(){
   ::pfuclt::particle::Particles particles(10000, 5, 2);

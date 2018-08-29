@@ -10,7 +10,10 @@ namespace pfuclt::map {
 std::size_t landmarksFromParameter(LandmarkMap& map, const std::string &param, const ros::NodeHandle &nh) {
   XmlRpc::XmlRpcValue landmarks_raw;
   try{
-    nh.getParam(param, landmarks_raw);
+    if(!nh.getParam(param, landmarks_raw)){
+      ROS_FATAL_STREAM("Landmarks parameter not found: " << nh.resolveName(param) << std::endl);
+      return 0;
+    };
     ROS_ASSERT_MSG(landmarks_raw.getType() == XmlRpc::XmlRpcValue::TypeArray, "Expected landmarks as a list");
 
     for(int lm_id=0; lm_id<landmarks_raw.size(); ++lm_id) { /* NOLINT */
