@@ -19,10 +19,10 @@ class Robot {
 
  public:
   // id of this robot - they should start at 1
-  const uint idx;
+  const uint idx{0};
 
   // name of this robot - should end with a number
-  const std::string name;
+  const std::string name{""};
 
  private:
   static constexpr auto name_prefix_ = "robot";
@@ -42,15 +42,18 @@ class Robot {
   void odometryCallback(const clt_msgs::CustomOdometryConstPtr&);
 
  public:
-
   Robot() = delete;
+  Robot(const Robot &) = delete; // no copy
+  Robot(Robot &&) = delete; // no move
+  Robot& operator=(const Robot &) = delete; // no copy assign
+  Robot& operator=(Robot &&) = delete; // no move assign
 
   /**
    * Constructor
    * @param idx the id of this robot (usually should start at 1)
    * @param subparticles pointer to the subparticles of these robot in a set of particles
    */
-  Robot(const uint idx, particle::RobotSubParticles* subparticles);
+  Robot(uint id, particle::RobotSubParticles* subparticles);
 
   //TODO Robot(std::string name);
 };

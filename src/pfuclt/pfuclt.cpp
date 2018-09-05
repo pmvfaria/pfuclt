@@ -6,7 +6,13 @@
 
 namespace pfuclt::algorithm {
 
-PFUCLT::PFUCLT(const uint8_t &self_robot_id) {
+PFUCLT::PFUCLT(const uint &self_robot_id) {
+
+  // Get important parameters
+  int num_particles, num_robots, num_targets;
+  ROS_ASSERT_MSG(pnh_.getParam("particles", num_particles), "Parameter num_particles is required");
+  ROS_ASSERT_MSG(nh_.getParam("num_robots", num_robots), "Parameter num_robots is required");
+  ROS_ASSERT_MSG(nh_.getParam("num_targets", num_targets), "Parameter num_targets is required");
 
   // Get landmarks map
   const auto num_landmarks = this->getLandmarkMap();
@@ -16,11 +22,6 @@ PFUCLT::PFUCLT(const uint8_t &self_robot_id) {
   ROS_INFO_STREAM(*map_);
 
   // Create and initialize particles
-  int num_particles, num_robots, num_targets;
-  ROS_ASSERT_MSG(pnh_.getParam("particles", num_particles), "Parameter num_particles is required");
-  ROS_ASSERT_MSG(nh_.getParam("num_robots", num_robots), "Parameter num_robots is required");
-  ROS_ASSERT_MSG(nh_.getParam("num_targets", num_targets), "Parameter num_targets is required");
-
   particles_ = std::make_unique<::pfuclt::particle::Particles>(num_particles, num_robots, num_targets);
 
   auto initializedParticlesFromParameter = this->initializeParticles();
@@ -30,6 +31,12 @@ PFUCLT::PFUCLT(const uint8_t &self_robot_id) {
     ROS_INFO("Initialized particles randomly");
 
   ROS_INFO_STREAM(*particles_);
+
+  // Create robots
+  for(uint r=0; r<(uint)num_robots; ++r) {
+    robots_.emplace_back(std::make_unique<::pfuclt::robot::Robot>(r+1, &particles_->robots[r]));
+    ROS_INFO_STREAM("Robot created with index " << robots_[r]->idx << " and name " << robots_[r]->name);
+  }
 }
 
 } // namespace pfuclt::algorithm

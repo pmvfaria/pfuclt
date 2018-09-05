@@ -4,11 +4,12 @@
 
 int main(int argc, char **argv){
 
-  ros::init(argc, argv, "pfuclt_node");
-
-//  ros::Time::waitForValid();
+  ::ros::init(argc, argv, "pfuclt_node");
+  ROS_INFO("PFUCLT node started");
 
   ::pfuclt::algorithm::PFUCLT pfuclt(1);
+
+  ::ros::spin();
 
   return EXIT_SUCCESS;
 }

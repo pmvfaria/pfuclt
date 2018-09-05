@@ -8,7 +8,7 @@
 #include <ros/ros.h>
 #include "../particle/particles.hpp"
 #include "map/map_ros.hpp"
-
+#include "robot.hpp"
 
 namespace pfuclt::algorithm {
 
@@ -16,6 +16,7 @@ class PFUCLT {
  private:
   ros::NodeHandle nh_{""};
   ros::NodeHandle pnh_{"~"};
+  std::vector<std::unique_ptr<::pfuclt::robot::Robot>> robots_;
   std::unique_ptr<::pfuclt::map::LandmarkMap> map_;
   std::unique_ptr<::pfuclt::particle::Particles> particles_;
 
@@ -36,12 +37,16 @@ class PFUCLT {
 
  public:
   PFUCLT() = delete;
+  PFUCLT(const PFUCLT &) = delete; // no copy
+  PFUCLT(PFUCLT &&) = delete; // no move
+  PFUCLT& operator=(const PFUCLT &) = delete; // no copy assign
+  PFUCLT& operator=(PFUCLT &&) = delete; // no move assign
 
   /**
    * @brief Main constructor of PFUCLT
    * @param self_robot_id the robot that the algorithm will run on
    */
-  explicit PFUCLT(const uint8_t& self_robot_id);
+  explicit PFUCLT(const uint& self_robot_id);
 };
 
 } // namespace pfuclt::algorithm
