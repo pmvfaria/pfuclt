@@ -43,7 +43,7 @@ Particles &Particles::initialize(
 
   assert(robot_dist.size() == robots.size() && target_dist.size() == targets.size());
 
-  std::default_random_engine generator(seed_);
+  std::mt19937 generator(seed_);
 
   for (uint r = 0; r < robot_dist.size(); ++r) {
     for (uint v = 0; v < RobotSubParticle::number_states; ++v) {
@@ -74,8 +74,8 @@ Particles &Particles::initialize(
 
 Particles &Particles::initialize() {
 
-  std::array<double[2], RobotSubParticle::number_states> robot_dist{-10, 10, -10, 10, -M_PI, M_PI};
-  std::array<double[2], TargetSubParticle::number_states> target_dist{-10, 10, -10, 10, 0, 5};
+  std::array<double[2], RobotSubParticle::number_states> robot_dist{ { {-10, 10}, {-10, 10}, {-M_PI, M_PI} } };
+  std::array<double[2], TargetSubParticle::number_states> target_dist{ { {-10, 10}, {-10, 10}, {0, 5} } };
 
   return initialize(std::vector<std::array<double[2], RobotSubParticle::number_states>>(robots.size(), robot_dist),
                     std::vector<std::array<double[2], TargetSubParticle::number_states>>(targets.size(), target_dist));

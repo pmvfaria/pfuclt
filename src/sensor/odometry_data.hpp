@@ -15,20 +15,6 @@ struct OdometryMeasurement{
 
 OdometryMeasurement fromRosCustomMsg(const clt_msgs::CustomOdometryConstPtr &msg);
 
-
-class OdometryHandler{
-
- private:
-  std::vector<OdometryMeasurement> queue_;
-  const uint8_t robot_id_;
-
- public:
-  OdometryHandler() = delete;
-  OdometryHandler(const std::size_t& queue_size, const uint8_t& robot_id);
-  void callback(const clt_msgs::CustomOdometryConstPtr& msg);
-
-};
-
 } // namespace pfuclt::sensor::odometry
 
 #endif //PFUCLT_LANDMARK_DATA_HPP

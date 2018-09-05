@@ -108,7 +108,7 @@ void _estimate_max_weight_impl(const Particles &particles, State &state) {
   }
 }
 
-State estimateState(Particles &particles, StateCalculation opt) {
+State estimateState(const Particles &particles, const StateCalculation opt) {
 
   State state(particles.robots.size(), particles.targets.size());
 
@@ -118,6 +118,6 @@ State estimateState(Particles &particles, StateCalculation opt) {
     case StateCalculation::MAX_WEIGHT : _estimate_max_weight_impl(particles, state); break;
   }
 
-  return std::move(state);
+  return state;
 }
 } // namespace pfuclt::state
