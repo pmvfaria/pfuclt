@@ -100,7 +100,7 @@ TEST(Particle, normalizeAccuracy){ /* NOLINT */
   EXPECT_NEAR(num_particles*SMALL_WEIGHT, std::accumulate(p.weights.begin(), p.weights.end(), 0.0), SMALL_WEIGHT);
 
   // Normalize should not throw unless sum is exactly 0.0
-  EXPECT_NO_THROW(p.normalizeWeights());
+  EXPECT_NO_THROW(p.normalizeWeights(std::nullopt));
 
   // Value after normalizing
   EXPECT_NEAR(1.0/num_particles, p.weights[0], SMALL_WEIGHT);

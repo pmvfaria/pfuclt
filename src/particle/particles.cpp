@@ -103,33 +103,32 @@ Particles &Particles::addTarget() noexcept {
   return *this;
 }
 
-Particles &Particles::normalizeWeights() {
+Particles &Particles::normalizeWeights(const optional_parallel& tag) {
 
-  if(normalize__impl(weights))
+  if(tag) { // parallel
+    const auto sum_weights = __gnu_parallel::accumulate(weights.begin(), weights.end(), 0.0, tag.value());
+    if (sum_weights == 0.0) {
+      throw std::range_error("Weights have a sum of 0.0, not possible to normalize");
+    } else if (sum_weights != 1.0) {
+      __gnu_parallel::transform(weights.begin(), weights.end(), weights.begin(),
+                                [sum_weights](auto &w) { return w / sum_weights; });
+    }
     return *this;
-  else
-    throw std::range_error("Weights have a sum of 0.0, not possible to normalize");
+  }
+  else { // sequential
+    if(normalize__impl(weights))
+      return *this;
+    else
+      throw std::range_error("Weights have a sum of 0.0, not possible to normalize");
+  }
 }
 
-Particles &Particles::normalizeWeights(const __gnu_parallel::_Parallelism &tag) {
+Particles &Particles::resize(const size_t &num_particles, const optional_parallel& tag) {
 
-  const auto sum_weights = __gnu_parallel::accumulate(weights.begin(), weights.end(), 0.0, tag);
-  if (sum_weights == 0.0) {
-    throw std::range_error("Weights have a sum of 0.0, not possible to normalize");
-  }
-  else if (sum_weights != 1.0) {
-    __gnu_parallel::transform(weights.begin(), weights.end(), weights.begin(),
-                              [sum_weights](auto &w) { return w / sum_weights; });
-  }
-  return *this;
-}
+  this->foreach_robot([num_particles](RobotSubParticles &r) { r.resize(num_particles); }, tag);
+  this->foreach_target([num_particles](TargetSubParticles &t) { t.resize(num_particles); }, tag);
 
-Particles &Particles::resize(const size_t &num_particles) {
-
-  __gnu_parallel::for_each(robots.begin(), robots.end(), [num_particles](auto &r) { r.resize(num_particles); });
-  __gnu_parallel::for_each(targets.begin(), targets.end(), [num_particles](auto &t) { t.resize(num_particles); });
   weights.resize(num_particles);
-
   return *this;
 }
 double Particles::sumOfWeights() {
@@ -141,6 +140,34 @@ WeightSubParticles Particles::getNormalizedWeightsCopy() const{
 
   normalize__impl(weights_copy);
   return weights_copy;
+}
+
+void Particles::foreach_robot(std::function<void(RobotSubParticles&)> const& f, const optional_parallel& tag) {
+  if(tag)
+    __gnu_parallel::for_each(robots.begin(), robots.end(), f, tag.value());
+  else
+    std::for_each(robots.begin(), robots.end(), f);
+}
+
+void Particles::foreach_robot(std::function<void(const RobotSubParticles&)> const& f, const optional_parallel& tag) const {
+  if(tag)
+    __gnu_parallel::for_each(robots.begin(), robots.end(), f, tag.value());
+  else
+    std::for_each(robots.begin(), robots.end(), f);
+}
+
+void Particles::foreach_target(std::function<void(TargetSubParticles&)> const& f, const optional_parallel& tag) {
+  if(tag)
+    __gnu_parallel::for_each(targets.begin(), targets.end(), f, tag.value());
+  else
+    std::for_each(targets.begin(), targets.end(), f);
+}
+
+void Particles::foreach_target(std::function<void(const TargetSubParticles&)> const& f, const optional_parallel& tag) const {
+  if(tag)
+    __gnu_parallel::for_each(targets.begin(), targets.end(), f, tag.value());
+  else
+    std::for_each(targets.begin(), targets.end(), f);
 }
 
 std::ostream &operator<<(std::ostream &os, const Particles &p) {

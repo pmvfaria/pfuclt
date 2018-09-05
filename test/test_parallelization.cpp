@@ -28,7 +28,7 @@ void timeNormalizeWeights() {
 
   for(uint i=0; i<10000; ++i) {
     try {
-      particles.normalizeWeights();
+      particles.normalizeWeights(std::nullopt);
     }
     catch (const std::range_error &err){
       std::cout<<"caught"<<std::endl;

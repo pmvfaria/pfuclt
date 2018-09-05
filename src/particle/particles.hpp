@@ -6,6 +6,7 @@
 #include <mutex>
 #include <atomic>
 #include <parallel/types.h>
+#include <functional>
 #include "subparticle.hpp"
 
 namespace pfuclt::particle {
@@ -15,6 +16,9 @@ namespace pfuclt::particle {
   * @details Does not care about correspondences, an external class should do the map if needed
   */
 class Particles {
+
+  using optional_parallel = std::optional<const __gnu_parallel::_Parallelism>;
+
  private:
   long seed_{std::chrono::system_clock::now().time_since_epoch().count()};
 
@@ -88,22 +92,17 @@ class Particles {
   /**
    * @brief Normalizes the weights, each to 1/num_particles
    * @throws std::range_error if the sum of weights is 0.0
+   * @param tag optional parallelization tag from __gnu_parallel
    */
-  Particles& normalizeWeights();
-
-  /**
-   * @brief (Parallelized version) Normalizes the weights, each to 1/num_particles
-   * @throws std::range_error if the sum of weights is 0.0
-   * @param tag Parallelization tag from __gnu_parallel
-   */
-  Particles& normalizeWeights(const __gnu_parallel::_Parallelism& tag);
+  Particles& normalizeWeights(const optional_parallel& tag = std::nullopt);
 
   /**
    * @brief Resize all sub-particle sets
    * @details If resizing to a larger number of particles, the new ones are initialized to 0.0
    * @param num_particles The desired number of particles
+   * @param tag optional parallelization tag from __gnu_parallel
    */
-  Particles& resize(const size_t& num_particles);
+  Particles& resize(const size_t& num_particles, const optional_parallel& tag = std::nullopt);
 
   /**
    * @brief Calculate the sum of all particle weights
@@ -116,6 +115,12 @@ class Particles {
    * @return copy of normalized weights
    */
   WeightSubParticles getNormalizedWeightsCopy() const;
+
+  void foreach_robot(std::function<void(RobotSubParticles&)> const& f, const optional_parallel& tag = std::nullopt);
+  void foreach_robot(std::function<void(const RobotSubParticles&)> const& f, const optional_parallel& tag = std::nullopt) const;
+
+  void foreach_target(std::function<void(TargetSubParticles&)> const& f, const optional_parallel& tag = std::nullopt);
+  void foreach_target(std::function<void(const TargetSubParticles&)> const& f, const optional_parallel& tag = std::nullopt) const;
 
   //TODO use fastest random number generator available
 };
