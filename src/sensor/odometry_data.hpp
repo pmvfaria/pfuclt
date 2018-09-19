@@ -5,12 +5,14 @@
 
 #include <vector>
 #include <ros/ros.h>
+#include <std_msgs/Header.h>
 #include <clt_msgs/CustomOdometry.h>
 
 namespace pfuclt::sensor::odometry{
 
 struct OdometryMeasurement{
-  double initial_rotation, translation, final_translation;
+  const ros::Time stamp;
+  const double initial_rotation, translation, final_translation;
 };
 
 OdometryMeasurement fromRosCustomMsg(const clt_msgs::CustomOdometryConstPtr &msg);

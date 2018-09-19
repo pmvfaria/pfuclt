@@ -66,7 +66,9 @@ add_library(stopwatch src/thirdparty/stopwatch/StopWatch.cpp)
 
 add_executable(pfuclt_node src/ros/pfuclt_node.cpp src/sensor/odometry_data.cpp src/particle/particles.cpp src/particle/particles.hpp
         src/map/landmark_map.cpp src/map/landmark_map.hpp src/map/map_ros.cpp src/map/map_ros.hpp
-        src/sensor/landmark_data.cpp src/pfuclt/pfuclt.cpp src/pfuclt/pfuclt.hpp src/pfuclt/initialize.cpp src/pfuclt/state.cpp src/pfuclt/state.hpp src/pfuclt/robot.cpp src/pfuclt/robot.hpp)
+        src/sensor/landmark_data.cpp src/pfuclt/pfuclt.cpp src/pfuclt/pfuclt.hpp
+        src/pfuclt/initialize.cpp src/pfuclt/state.cpp src/pfuclt/state.hpp src/pfuclt/robot.cpp src/pfuclt/robot.hpp
+        src/thirdparty/stopwatch/StopWatch.cpp)
 target_link_libraries(pfuclt_node ${catkin_LIBRARIES})
 
 add_executable(test_pararallelization test/test_parallelization.cpp src/particle/particles.cpp)

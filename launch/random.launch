@@ -1,30 +1,39 @@
 <?xml version="1.0" ?>
 <launch>
-  <param name="use_sim_time" value="true"/>
-  <arg default="/home/$(optenv USER NO_USER_ENV)/datasets/clt_datasets/clt_generated_dataset.bag" name="dataset_path"/>
-  <arg default="false" name="debug"/>
-  <arg default="true" name="publish"/>
-  <arg default="1.0" name="rate"/>
-  <arg default="250" name="particles"/>
-  <arg default="/home/$(optenv USER NO_USER_ENV)/datasets/pfuclt/" name="pfuclt_dataset_path"/>
-  <arg default="random_pfuclt.bag" name="pfuclt_dataset_bag"/>
-  <param name="num_robots" value="3"/>
-  <param name="num_targets" value="2"/>
-  <node args="--quiet --clock --rate=$(arg rate) $(arg dataset_path)" name="player" output="screen" pkg="rosbag" required="true" type="play"/>
-  <node args="--debug $(arg debug) --publish $(arg publish)" name="pfuclt_node" output="screen" pkg="pfuclt" required="true" type="pfuclt_node">
-    <param name="percentage_to_keep" value="50"/>
-    <param name="velocity_estimator_stack_size" value="10"/>
-    <param name="predict_model_stddev" value="30"/>
-    <param name="particles" value="$(arg particles)"/>
-    <param name="robot_id" value="1"/>
-    <param name="K" value="1"/>
-    <rosparam param="landmark_covariances">[0.02, 0.005, 0.002, 0.005, 0.005]</rosparam>
-    <rosparam param="init_robot_particles">[[[5.368755308669976, 5.468755308669976], [0.8127957085391919, 0.912795708539192], [-2.5059709093022082, -2.4059709093022086]], [[6.663762799370575, 6.763762799370575], [-1.4407420279220837, -1.3407420279220836], [-2.705163923295181, -2.6051639232951813]], [[1.3855441697220263, 1.4855441697220264], [1.649143246916969, 1.749143246916969], [2.357210808207175, 2.457210808207175]]]</rosparam>
-    <rosparam param="init_target_particles">[[[5.151512923788788, 5.251512923788788], [-3.1257516368808855, -3.025751636880886], [1.0874927010326905, 1.1874927010326906]], [[5.302821131816061, 5.402821131816061], [4.330775932524046, 4.430775932524045], [1.357055347169877, 1.457055347169877]]]</rosparam>
-  </node>
-  <group ns="alphas">
-    <param name="robot1_alpha" value="0.015, 0.1, 0.5, 0.001"/>
-    <param name="robot2_alpha" value="0.015, 0.1, 0.5, 0.001"/>
-    <param name="robot3_alpha" value="0.015, 0.1, 0.5, 0.001"/>
-  </group>
+    <param name="use_sim_time" value="true"/>
+    <arg default="/home/$(optenv USER NO_USER_ENV)/datasets/clt_datasets/clt_generated_dataset.bag"
+         name="dataset_path"/>
+    <arg default="false" name="debug"/>
+    <arg default="true" name="publish"/>
+    <arg default="1.0" name="rate"/>
+    <arg default="250" name="particles"/>
+    <arg default="/home/$(optenv USER NO_USER_ENV)/datasets/pfuclt/" name="pfuclt_dataset_path"/>
+    <arg default="random_pfuclt.bag" name="pfuclt_dataset_bag"/>
+    <param name="num_robots" value="3"/>
+    <param name="num_targets" value="2"/>
+    <node args="--debug $(arg debug) --publish $(arg publish)" name="pfuclt_node" output="screen" pkg="pfuclt"
+          required="true" type="pfuclt_node">
+        <param name="percentage_to_keep" value="50"/>
+        <param name="velocity_estimator_stack_size" value="10"/>
+        <param name="predict_model_stddev" value="30"/>
+        <param name="particles" value="$(arg particles)"/>
+        <param name="robot_id" value="1"/>
+        <param name="K" value="1"/>
+        <rosparam param="landmark_covariances">[0.02, 0.005, 0.002, 0.005, 0.005]</rosparam>
+        <rosparam param="init_robot_particles">[[[1.2554859383699317, 1.3554859383699318], [3.2160280542623676,
+            3.3160280542623672], [2.7631028332870144, 2.863102833287014]], [[3.00560320356958, 3.1056032035695798],
+            [-0.7157887222147103, -0.6157887222147103], [-0.29609710524011773, -0.19609710524011775]],
+            [[1.9774066525232776, 2.0774066525232775], [4.240041602565133, 4.340041602565132], [1.1841253950143054,
+            1.2841253950143054]]]
+        </rosparam>
+        <rosparam param="init_target_particles">[[[5.575926983620382, 5.675926983620382], [-2.7847601240515005,
+            -2.684760124051501], [1.3663356872869128, 1.4663356872869129]], [[5.9470330052086355, 6.047033005208635],
+            [-0.03358140825559382, 0.06641859174440619], [0.6937661225432908, 0.7937661225432909]]]
+        </rosparam>
+    </node>
+    <group ns="alphas">
+        <rosparam param="robot1">[0.015, 0.1, 0.5, 0.001]</rosparam>
+        <rosparam param="robot2">[0.015, 0.1, 0.5, 0.001]</rosparam>
+        <rosparam param="robot3">[0.015, 0.1, 0.5, 0.001]</rosparam>
+    </group>
 </launch>

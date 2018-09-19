@@ -121,8 +121,6 @@ class Particles {
 
   void foreach_target(std::function<void(TargetSubParticles&)> const& f, const optional_parallel& tag = std::nullopt);
   void foreach_target(std::function<void(const TargetSubParticles&)> const& f, const optional_parallel& tag = std::nullopt) const;
-
-  //TODO use fastest random number generator available
 };
 
 std::ostream& operator<<(std::ostream &os, const Particles &p);

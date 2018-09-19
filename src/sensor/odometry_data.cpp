@@ -7,7 +7,7 @@
 namespace pfuclt::sensor::odometry{
 
 OdometryMeasurement fromRosCustomMsg(const clt_msgs::CustomOdometryConstPtr &msg){
-  return OdometryMeasurement{msg->rot1, msg->rot2, msg->translation};
+  return OdometryMeasurement{msg->header.stamp, msg->rot1, msg->rot2, msg->translation};
 }
 
 } // namespace pfuclt::sensor::odometry

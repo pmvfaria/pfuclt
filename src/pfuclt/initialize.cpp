@@ -5,7 +5,9 @@
 #include "pfuclt.hpp"
 #include <xmlrpcpp/XmlRpcException.h>
 
-namespace pfuclt::algorithm {
+namespace pfuclt {
+
+namespace algorithm {
 
 const std::size_t PFUCLT::getLandmarkMap() {
 
@@ -87,4 +89,27 @@ const bool PFUCLT::initializeParticles() {
   }
 }
 
-} // namespace pfuclt::algorithm
+}// namespace algorithm
+
+namespace robot{
+
+void Robot::getAlphas() {
+
+  using namespace ::XmlRpc;
+  ros::NodeHandle anh{"/alphas"};
+  const auto &alphas_param = this->name;
+
+  XmlRpcValue init_alphas;
+  anh.getParam(alphas_param, init_alphas);
+
+  ROS_ASSERT_MSG(init_alphas.getType() == XmlRpcValue::TypeArray && (size_t)init_alphas.size() == alphas_.size(),
+                 "Expected %s as a list with %d values", anh.resolveName(alphas_param).c_str(), (int)alphas_.size());
+
+  for(int i=0; i<init_alphas.size(); ++i) {
+    alphas_[i] = init_alphas[i];
+  }
+}
+
+}
+
+} // namespace pfuclt

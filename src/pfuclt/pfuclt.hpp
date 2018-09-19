@@ -16,9 +16,18 @@ class PFUCLT {
  private:
   ros::NodeHandle nh_{""};
   ros::NodeHandle pnh_{"~"};
+
   std::vector<std::unique_ptr<::pfuclt::robot::Robot>> robots_;
   std::unique_ptr<::pfuclt::map::LandmarkMap> map_;
   std::unique_ptr<::pfuclt::particle::Particles> particles_;
+
+  ros::Rate rate_;
+
+  // queue to place odometry and other robot callbacks
+  ros::CallbackQueue odometry_cb_queue_;
+
+  // async spinner to allow multi-threading with other robots
+  std::unique_ptr<ros::AsyncSpinner> odometry_spinner_;
 
  private:
   /**
@@ -47,6 +56,11 @@ class PFUCLT {
    * @param self_robot_id the robot that the algorithm will run on
    */
   explicit PFUCLT(const uint& self_robot_id);
+
+  void processOdometryAllRobots();
+
+ public:
+  void run();
 };
 
 } // namespace pfuclt::algorithm

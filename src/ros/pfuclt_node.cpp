@@ -9,7 +9,7 @@ int main(int argc, char **argv){
 
   ::pfuclt::algorithm::PFUCLT pfuclt(1);
 
-  ::ros::spin();
+  pfuclt.run();
 
   return EXIT_SUCCESS;
 }
