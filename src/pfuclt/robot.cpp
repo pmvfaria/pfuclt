@@ -10,7 +10,7 @@ namespace pfuclt::robot {
 
 Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, ros::CallbackQueue* odometry_cb_queue)
   : idx(id), name(Robot::name_prefix_ + std::to_string(idx+1)),
-  nh_("/robots/"+name), subparticles(p_subparticles) {
+  generator_(rd_()), nh_("/robots/"+name), subparticles(p_subparticles) {
 
   getAlphas();
 
@@ -28,7 +28,7 @@ void Robot::processOdometryUntil(const ros::Time& t) {
 
 }
 
-void Robot::processOdometryMeasurement(const clt_msgs::CustomOdometryConstPtr &msg) const {
+void Robot::processOdometryMeasurement(const clt_msgs::CustomOdometryConstPtr &msg) {
 
   // Robot motion model (from Probabilistic Robotics book)
   std::normal_distribution<double>

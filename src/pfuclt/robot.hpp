@@ -20,6 +20,8 @@ namespace pfuclt::robot {
 
 using namespace ::pfuclt::sensor;
 
+using generator_type = std::mt19937;
+
 class Robot {
 
  public:
@@ -30,8 +32,8 @@ class Robot {
   const std::string name;
 
  private:
-  long seed_{std::chrono::system_clock::now().time_since_epoch().count()};
-  std::mt19937 generator_{seed_};
+  std::random_device rd_{};
+  generator_type generator_;
 
   static constexpr auto name_prefix_ = "robot";
 
@@ -52,7 +54,7 @@ class Robot {
   void getAlphas();
   void odometryCallback(const clt_msgs::CustomOdometryConstPtr&);
   void processOdometryUntil(const ros::Time& t);
-  void processOdometryMeasurement(const clt_msgs::CustomOdometryConstPtr &msg) const;
+  void processOdometryMeasurement(const clt_msgs::CustomOdometryConstPtr &msg);
 
 
  public:
