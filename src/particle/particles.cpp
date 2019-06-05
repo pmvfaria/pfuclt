@@ -12,8 +12,8 @@ namespace pfuclt::particle {
 
 Particles::Particles(const size_t num_particles, const size_t num_robots, const size_t num_targets) :
     num_particles(num_particles),
-    robots(num_robots, RobotSubParticles(num_particles, RobotSubParticle(0.0))),
-    targets(num_targets, TargetSubParticles(num_particles, TargetSubParticle(0.0))),
+    robots(num_robots, RobotSubParticles(num_particles)),
+    targets(num_targets, TargetSubParticles(num_particles)),
     weights(num_particles, 0.0) {
   // Nothing to do
 }
@@ -46,26 +46,36 @@ Particles &Particles::initialize(
   std::mt19937 generator(seed_);
 
   for (uint r = 0; r < robot_dist.size(); ++r) {
-    for (uint v = 0; v < RobotSubParticle::number_states; ++v) {
-      const auto &params = robot_dist[r][v];
-
-      std::uniform_real_distribution<double> dist(params[0], params[1]);
-
-      for (auto &subparticle: robots[r]) {
-        subparticle[v] = dist(generator);
-      }
+    const auto &params = robot_dist[r];
+    const auto
+      &params_x (params[0]),
+      &params_y (params[1]),
+      &params_theta (params[2]);
+    std::uniform_real_distribution<double>
+      dist_x(params_x[0], params_x[1]),
+      dist_y(params_y[0], params_y[1]),
+      dist_theta(params_theta[0], params_theta[1]);
+    for (auto &subparticle: robots[r]) {
+      subparticle.x = dist_x(generator);
+      subparticle.y = dist_y(generator);
+      subparticle.theta = dist_theta(generator);
     }
   }
 
   for (uint t = 0; t < target_dist.size(); ++t) {
-    for (uint v = 0; v < TargetSubParticle::number_states; ++v) {
-      const auto &params = target_dist[t][v];
-
-      std::uniform_real_distribution<double> dist(params[0], params[1]);
-
-      for (auto &subparticle: targets[t]) {
-        subparticle[v] = dist(generator);
-      }
+    const auto &params = target_dist[t];
+    const auto
+      &params_x (params[0]),
+      &params_y (params[1]),
+      &params_z (params[2]);
+    std::uniform_real_distribution<double>
+      dist_x(params_x[0], params_x[1]),
+      dist_y(params_y[0], params_y[1]),
+      dist_z(params_z[0], params_z[1]);
+    for (auto &subparticle: targets[t]) {
+      subparticle.x = dist_x(generator);
+      subparticle.y = dist_y(generator);
+      subparticle.z = dist_z(generator);
     }
   }
 
@@ -99,7 +109,7 @@ Particles &Particles::removeTarget(const size_t &t) {
 }
 
 Particles &Particles::addTarget() noexcept {
-  targets.emplace_back(TargetSubParticles(num_particles, TargetSubParticle(0.0)));
+  targets.emplace_back(TargetSubParticles(num_particles));
   return *this;
 }
 
