@@ -16,28 +16,28 @@ State::State(const size_t num_robots, const size_t num_targets) : robots(num_rob
 
 void _estimate_avg_impl(const Particles &particles, State &state) {
 
+  //TODO check this actually cycles through the robots (r, r+1, ...)
   particles.foreach_robot([r=0, &state] (const auto &p_r) mutable -> void {
-
     auto &robot_state = state.robots[r];
     ++r;
 
-    robot_state.y() = std::accumulate(p_r.begin(), p_r.end(), 0.0, [&](double sum, const RobotSubParticle &rsp) {
-      return sum + rsp.x();
+    robot_state.x = std::accumulate(p_r.begin(), p_r.end(), 0.0, [&](double sum, const RobotSubParticle &rsp) {
+      return sum + rsp.x;
     }) / p_r.size();
 
-    robot_state.y() = std::accumulate(p_r.begin(), p_r.end(), 0.0, [&](double sum, const RobotSubParticle &rsp) {
-      return sum + rsp.y();
+    robot_state.y = std::accumulate(p_r.begin(), p_r.end(), 0.0, [&](double sum, const RobotSubParticle &rsp) {
+      return sum + rsp.y;
     }) / p_r.size();
 
     // Theta as mean of circular quantities
     double sum_theta_cos{0.0}, sum_theta_sin{0.0};
     for (const RobotSubParticle &rsp: p_r) {
-      sum_theta_cos += cos(rsp.theta());
-      sum_theta_sin += sin(rsp.theta());
+      sum_theta_cos += cos(rsp.theta);
+      sum_theta_sin += sin(rsp.theta);
     }
 
     // Convert back to polar
-    robot_state.theta() = atan2(sum_theta_sin / p_r.size(), sum_theta_cos / p_r.size());
+    robot_state.theta = atan2(sum_theta_sin / p_r.size(), sum_theta_cos / p_r.size());
   });
 
   particles.foreach_target([t=0, &state] (const TargetSubParticles &p_t) mutable -> void {
@@ -45,16 +45,16 @@ void _estimate_avg_impl(const Particles &particles, State &state) {
     auto &target_state = state.targets[t];
     ++t;
 
-    target_state.y() = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
-      return sum + tsp.x();
+    target_state.y = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
+      return sum + tsp.x;
     }) / p_t.size();
 
-    target_state.y() = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
-      return sum + tsp.y();
+    target_state.y = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
+      return sum + tsp.y;
     }) / p_t.size();
 
-    target_state.z() = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
-      return sum + tsp.z();
+    target_state.z = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
+      return sum + tsp.z;
     }) / p_t.size();
   });
 }
@@ -73,15 +73,15 @@ void _estimate_weighted_avg_impl(const Particles &particles, State &state) {
     std::for_each(p_r.begin(), p_r.end(), [&, idx=0] (const auto &rsp) mutable -> void {
       const auto weight = normalized_weights[idx];
       if (weight != 0.0) {
-        robot_state.x() += rsp.x() * weight;
-        robot_state.y() += rsp.y() * weight;
-        sum_theta_cos += cos(rsp.theta()) * weight;
-        sum_theta_sin += sin(rsp.theta()) * weight;
+        robot_state.x += rsp.x * weight;
+        robot_state.y += rsp.y * weight;
+        sum_theta_cos += cos(rsp.theta) * weight;
+        sum_theta_sin += sin(rsp.theta) * weight;
       }
     });
 
     // Convert back to polar
-    state.robots[r].theta() = atan2(sum_theta_sin, sum_theta_cos);
+    state.robots[r].theta = atan2(sum_theta_sin, sum_theta_cos);
   });
 
   particles.foreach_target([&, t=0] (const TargetSubParticles& p_t) mutable -> void {
@@ -93,9 +93,9 @@ void _estimate_weighted_avg_impl(const Particles &particles, State &state) {
 
       const auto weight = normalized_weights[idx];
       if(weight != 0.0) {
-        target_state.x() += tsp.x() * weight;
-        target_state.y() += tsp.y() * weight;
-        target_state.z() += tsp.z() * weight;
+        target_state.x += tsp.x * weight;
+        target_state.y += tsp.y * weight;
+        target_state.z += tsp.z * weight;
       }
       ++idx;
     });
