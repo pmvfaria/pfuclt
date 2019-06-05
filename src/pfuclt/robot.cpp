@@ -15,7 +15,7 @@ Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, ros::Ca
   getAlphas();
 
   nh_.setCallbackQueue(odometry_cb_queue);
-  odometry_sub_ = nh_.subscribe( "odometry", 100,  &Robot::odometryCallback, this);
+  odometry_sub_ = nh_.subscribe("odometry", 100, &Robot::odometryCallback, this);
 
 }
 
@@ -46,15 +46,15 @@ void Robot::processOdometryMeasurement(const clt_msgs::CustomOdometryConstPtr &m
   for(auto& particle: *subparticles) {
 
     // Rotate to final position
-    particle.theta() += rot1_rand(generator_);
+    particle.theta += rot1_rand(generator_);
 
     // Sample and translate
     const double sample_translation = trans_rand(generator_);
-    particle.x() += sample_translation * cos(particle.theta());
-    particle.y() += sample_translation * sin(particle.theta());
+    particle.x += sample_translation * cos(particle.theta);
+    particle.y += sample_translation * sin(particle.theta);
 
     // Rotate to final and normalize
-    particle.theta() = angles::normalize_angle(particle.theta() + rot2_rand(generator_));
+    particle.theta = angles::normalize_angle(particle.theta + rot2_rand(generator_));
   }
 }
 
