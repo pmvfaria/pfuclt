@@ -80,9 +80,6 @@ TEST(Particle, cornerCases){ /* NOLINT */
 
   // Should keep their value of zero
   EXPECT_EQ(0.0, p.weights[0]);
-
-  // Should throw when accessing out of bounds
-  EXPECT_DEBUG_DEATH(p.robots[0][0][RobotSubParticle::number_states], "Assertion");
 }
 
 TEST(Particle, normalizeAccuracy){ /* NOLINT */
@@ -130,7 +127,7 @@ TEST(Particle, initialization) { /* NOLINT */
   // Initialize randomly
   p.initialize();
   double avg_robot_0_init = std::accumulate(p.robots[0].begin(), p.robots[0].end(), 0.0, [&](double sum, const RobotSubParticle& rsp) {
-    return sum + rsp[0];
+    return sum + rsp.x;
   }) / num_particles;
 
   // Averaging over 100000 particles where particles are distributed uniformly should be close to 0.0
@@ -154,11 +151,11 @@ TEST(Particle, initialization) { /* NOLINT */
   p.initialize(robots_vec, targets_vec);
 
   double avg_robot_1_init = std::accumulate(p.robots[0].begin(), p.robots[0].end(), 0.0, [&](double sum, const RobotSubParticle& rsp) {
-    return sum + rsp[1];
+    return sum + rsp.y;
   }) / num_particles;
 
   double avg_target_2_init = std::accumulate(p.targets[0].begin(), p.targets[0].end(), 0.0, [&](double sum, const TargetSubParticle& tsp) {
-    return sum + tsp[2];
+    return sum + tsp.z;
   }) / num_particles;
 
   EXPECT_NEAR(0.5*(d_left+d_right), avg_robot_1_init, TOLERANCE);
