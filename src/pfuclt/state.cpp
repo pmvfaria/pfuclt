@@ -16,7 +16,7 @@ State::State(const size_t num_robots, const size_t num_targets) : robots(num_rob
 
 void _estimate_avg_impl(const Particles &particles, State &state) {
 
-  //TODO check this actually cycles through the robots (r, r+1, ...)
+  //TODO: check this actually cycles through the robots (r, r+1, ...)
   particles.foreach_robot([r=0, &state] (const auto &p_r) mutable -> void {
     auto &robot_state = state.robots[r];
     ++r;
@@ -45,7 +45,7 @@ void _estimate_avg_impl(const Particles &particles, State &state) {
     auto &target_state = state.targets[t];
     ++t;
 
-    target_state.y = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
+    target_state.x = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
       return sum + tsp.x;
     }) / p_t.size();
 
