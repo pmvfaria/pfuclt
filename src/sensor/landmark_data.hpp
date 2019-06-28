@@ -21,6 +21,11 @@ struct LandmarkMeasurements{
   std::vector<LandmarkMeasurement> measurements;
 };
 
+/**
+ * @brief Retrieves landmark measurements from ROS message
+ * @param msg Message which contains the landmark measurements
+ * @return Struct LandmarkMeasurements containing the measurements
+ */
 LandmarkMeasurements fromRosMsg(const clt_msgs::MeasurementArrayConstPtr &msg);
 
 } // namespace pfuclt::sensor::landmark

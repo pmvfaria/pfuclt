@@ -7,17 +7,26 @@
 
 namespace pfuclt::particle{
 
-template <auto STATES>
+/** @template SubParticle
+  * @brief Stores the number of states of the subparticle
+  */
+template <int STATES>
 struct SubParticle{
   static constexpr std::size_t number_states{STATES};
 };
 
+/** @class RobotSubParticle
+  * @brief Derived class from Subparticle class. Stores the position of a robot subparticle
+  */
 struct RobotSubParticle: public SubParticle<3>{
   RobotSubParticle() = default;
   RobotSubParticle(double x_a, double y_a, double theta_a) : SubParticle(), x(x_a), y(y_a), theta(theta_a) { };
   double x, y, theta;
 };
 
+/** @class TargetSubParticle
+  * @brief Derived class from Subparticle class. Stores the position of a target subparticle
+  */
 struct TargetSubParticle: public SubParticle<3>{
   TargetSubParticle() = default;
   TargetSubParticle(double x_a, double y_a, double z_a) : SubParticle(), x(x_a), y(y_a), z(z_a){ };

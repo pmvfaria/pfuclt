@@ -20,6 +20,10 @@ struct Landmark {
 };
 std::ostream& operator<<(std::ostream &os, const Landmark &p);
 
+/**
+ * @brief The LandmarkMap class - creates and stores information of a rectangular
+ * map with landmarks in it.
+ */
 class LandmarkMap {
  private:
   const double center_x_, center_y_;
@@ -75,6 +79,7 @@ class LandmarkMap {
   bool addLandmark(const int& id, const double& x, const double& y);
 
   std::ostream& print(std::ostream& os) const;
+
 };
 
 std::ostream& operator<<(std::ostream &os, const LandmarkMap& map);

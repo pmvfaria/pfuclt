@@ -11,12 +11,14 @@
 
 namespace pfuclt::particle {
 
-/** @class Particles
-  * @brief Stores a set of robot, target and weight sub-particles
-  * @details Does not care about correspondences, an external class should do the map if needed
-  */
+/** 
+ * @class Particles
+ * @brief Stores a set of robot, target and weight sub-particles
+ * @details Does not care about correspondences, an external class should do the map if needed
+ */
 class Particles {
 
+  // Alias to the optional use of parallelization from __gnu_parallel
   using optional_parallel = std::optional<const __gnu_parallel::_Parallelism>;
 
  private:
@@ -46,19 +48,21 @@ class Particles {
   // Enable moving
   Particles(Particles &&other) noexcept;
 
-  /** @brief Creates a particle set with the options defined by the arguments
-    * @details All particle values are initialized to 0.0, including weights
-    * @param num_particles The number of particles for each sub-particle set
-    * @param num_robots The number of robot sub-particle sets
-    * @param num_targets The number of target sub-particle sets
-    */
+  /**
+   * @brief Creates a particle set with the options defined by the arguments
+   * @details Weigth particles are initialized to 0.0
+   * @param num_particles The number of particles for each sub-particle set
+   * @param num_robots The number of robot sub-particle sets
+   * @param num_targets The number of target sub-particle sets
+   */
   Particles(size_t num_particles, size_t num_robots, size_t num_targets);
 
-  /** @brief Initializes the particles from a set of uniform distributions
+  /**
+   * @brief Initializes the particles from a set of uniform distributions
    * @param robot_dist the distribution for variables of each robot
    * @param target_dist the distribution for variables of each target
    * @details each param is a vector of arrays of 2 values each,
-   * * left and right values of the uniform distribution for each variable and each robot )
+   * left and right values of the uniform distribution for each variable and each robot )
    */
   Particles& initialize( const std::vector<std::array<double[2], RobotSubParticle::number_states>> &robot_dist,
                          const std::vector<std::array<double[2], TargetSubParticle::number_states>> &target_dist);
@@ -92,7 +96,7 @@ class Particles {
   /**
    * @brief Normalizes the weights, each to 1/num_particles
    * @throws std::range_error if the sum of weights is 0.0
-   * @param tag optional parallelization tag from __gnu_parallel
+   * @param tag Optional parallelization tag from __gnu_parallel
    */
   Particles& normalizeWeights(const optional_parallel& tag = std::nullopt);
 
@@ -100,7 +104,7 @@ class Particles {
    * @brief Resize all sub-particle sets
    * @details If resizing to a larger number of particles, the new ones are initialized to 0.0
    * @param num_particles The desired number of particles
-   * @param tag optional parallelization tag from __gnu_parallel
+   * @param tag Optional parallelization tag from __gnu_parallel
    */
   Particles& resize(const size_t& num_particles, const optional_parallel& tag = std::nullopt);
 
@@ -116,9 +120,19 @@ class Particles {
    */
   WeightSubParticles getNormalizedWeightsCopy() const;
 
+  /**
+   * @brief Apply function f to every robot subparticle set
+   * @param f Function to apply to every robot
+   * @param tag Optional parallelization tag from __gnu_parallel
+   */
   void foreach_robot(std::function<void(RobotSubParticles&)> const& f, const optional_parallel& tag = std::nullopt);
   void foreach_robot(std::function<void(const RobotSubParticles&)> const& f, const optional_parallel& tag = std::nullopt) const;
 
+  /**
+   * @brief Apply function f to every target subparticle set
+   * @param f Function to apply to every target
+   * @param tag Optional parallelization tag from __gnu_parallel
+   */
   void foreach_target(std::function<void(TargetSubParticles&)> const& f, const optional_parallel& tag = std::nullopt);
   void foreach_target(std::function<void(const TargetSubParticles&)> const& f, const optional_parallel& tag = std::nullopt) const;
 };

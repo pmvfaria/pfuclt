@@ -15,6 +15,11 @@ struct OdometryMeasurement{
   const double initial_rotation, translation, final_rotation;
 };
 
+/**
+ * @brief Retrieves odometry measurement from ROS message
+ * @param msg Message which contains the odometry measurements
+ * @return Struct OdometryMeasurement containing the measurement
+ */
 OdometryMeasurement fromRosCustomMsg(const clt_msgs::CustomOdometryConstPtr &msg);
 
 } // namespace pfuclt::sensor::odometry
