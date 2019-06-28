@@ -14,40 +14,29 @@
 
 namespace pfuclt::target {
 
-using namespace ::pfuclt::sensor;
-
 using generator_type = std::mt19937;
 
+
+/**
+ * @brief The target class - Contains all the information of a specific target, like its id
+ * or a pointer to its subparicles set in the particle filter. The target motion model is
+ * implemented here.
+ * All targets should be instances if this class.
+ */
 class Target {
 
  public:
   // id of this target - they should start at 0
   const uint idx;
 
-  // name of this target - should end with a number
-  const std::string name;
+  // pointer to this target's sub-particles
+  particle::TargetSubParticles *subparticles;
 
  private:
   std::random_device rd_{};
   generator_type generator_;
 
-  static constexpr auto name_prefix_ = "target";
-
-  // scoped namespace
-  ::ros::NodeHandle nh_;
-
-  // subscriber and queue to take target messages
-  ros::Subscriber target_sub_;
-  std::queue<target_data::TargetMeasurement> target_cache_;
-
- public:
-  // pointer to this target's sub-particles
-  particle::TargetSubParticles *subparticles;
-
- private:
-  void targetCallback(const clt_msgs::MeasurementConstPtr&);
-  void processTargetMeasurement(const clt_msgs::MeasurementConstPtr&);
-
+  void processTargetModel();
 
  public:
   Target() = delete;
@@ -59,10 +48,9 @@ class Target {
   /**
    * Constructor
    * @param idx the id of this target (usually should start at 0)
-   * @param subparticles pointer to the subparticles of these target in a set of particles
-   * @param odometry_cb_queue pointer to a callback queue to associate with the odometry subscriber
+   * @param subparticles pointer to the subparticles of this target in a set of particles
    */
-  Target(uint id, particle::TargetSubParticles* p_subparticles, ros::CallbackQueue* target_cb_queue);
+  Target(uint id, particle::TargetSubParticles* p_subparticles);
 
 };
 

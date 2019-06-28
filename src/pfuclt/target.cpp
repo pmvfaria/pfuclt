@@ -3,23 +3,22 @@
 
 namespace pfuclt::target {
 
-Target::Target(const uint id, particle::TargetSubParticles* p_subparticles, ros::CallbackQueue* target_cb_queue)
-  : idx(id), name(Target::name_prefix_ + std::to_string(idx+1)),
-  generator_(rd_()), nh_("/targets/"+name), subparticles(p_subparticles) {
-
-  nh_.setCallbackQueue(target_cb_queue);
-  target_sub_ = nh_.subscribe("target", 100, &Target::targetCallback, this);
-
-}
-
-void Target::targetCallback(const clt_msgs::MeasurementConstPtr &msg) {
-  target_cache_.emplace(target_data::fromRosMsg(msg));
-}
+Target::Target(const uint id, particle::TargetSubParticles* p_subparticles)
+  : idx(id), generator_(rd_()), subparticles(p_subparticles) { }
 
 
-void Target::processTargetMeasurement(const clt_msgs::MeasurementConstPtr &msg) {
+void Target::processTargetModel() {
 
-  // Target model
+  // Target motion model
+  std::normal_distribution<double> targetAccel(TARGET_MEAN, TARGET_STDDEV);
+
+  for(auto& particle: *subparticles) {
+
+    // Update target subparticles
+    particle.x += 0.5 * targetAccel(generator_) * pow(timestamp, 2);
+    particle.y += 0.5 * targetAccel(generator_) * pow(timestamp, 2);
+    particle.z += 0.5 * targetAccel(generator_) * pow(timestamp, 2);
+  }
   
 }
 
