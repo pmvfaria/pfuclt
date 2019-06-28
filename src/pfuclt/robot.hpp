@@ -15,6 +15,8 @@
 
 #include "../particle/particles.hpp"
 #include "../sensor/odometry_data.hpp"
+#include "../sensor/target_data.hpp"
+#include "../sensor/landmark_data.hpp"
 
 namespace pfuclt::robot {
 
@@ -22,6 +24,12 @@ using namespace ::pfuclt::sensor;
 
 using generator_type = std::mt19937;
 
+
+/**
+ * @brief The Robot class - Has the common variables and methods of all robots,
+ * and is the base class of any specialized robots who may derive from it.
+ * All robots should be instances of this class
+ */
 class Robot {
 
  public:
@@ -46,15 +54,42 @@ class Robot {
   ros::Subscriber odometry_sub_;
   std::queue<odometry::OdometryMeasurement> odometry_cache_;
 
+  // subscriber and queue to take target messages
+  ros::Subscriber target_sub_;
+  std::queue<target_data::TargetMeasurement> target_cache_;
+
+  // subscriber and queue to take landmark messages
+  ros::Subscriber landmark_sub_;
+  std::queue<landmark::LandmarkMeasurements> landmark_cache_;
+
  public:
   // pointer to this robot's sub-particles
   particle::RobotSubParticles *subparticles;
 
  private:
   void getAlphas();
+  
+  /**
+   * @brief odometryCallback - event-driven function that should be called when
+   * new odometry data is received
+   */
   void odometryCallback(const clt_msgs::CustomOdometryConstPtr&);
   void processOdometryUntil(const ros::Time& t);
-  void processOdometryMeasurement(const clt_msgs::CustomOdometryConstPtr &msg);
+  void processOdometryMeasurement();
+
+  /**
+   * @brief targetCallBack - event-driven function that should be called when
+   * new target data is received
+   */
+  void targetCallback(const clt_msgs::MeasurementStampedConstPtr&);
+  void processTargetMeasurement();
+
+  /**
+   * @brief landmarkDataCallback - event-driven function which should be called
+   * when new landmark data is received
+   */
+  void landmarkCallback(const clt_msgs::MeasurementArrayConstPtr&);
+  void processLandmarkMeasurement();
 
 
  public:
@@ -72,7 +107,7 @@ class Robot {
    */
   Robot(uint id, particle::RobotSubParticles* p_subparticles, ros::CallbackQueue* odometry_cb_queue);
 
-  //TODO Robot(std::string name);
+  //TODO: Robot(std::string name);
 };
 
 } // namespace pfuclt::robot

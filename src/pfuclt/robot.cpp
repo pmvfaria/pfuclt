@@ -28,22 +28,26 @@ void Robot::processOdometryUntil(const ros::Time& t) {
 
 }
 
-void Robot::processOdometryMeasurement(const clt_msgs::CustomOdometryConstPtr &msg) {
+void Robot::processOdometryMeasurement() {
+
+  // Retrieve oldest element of queue
+  auto odom = odometry_cache_.front();
+  odometry_cache_.pop();
 
   // Robot motion model (from Probabilistic Robotics book)
   std::normal_distribution<double>
       rot1_rand(
-          msg->rot1,
-          alphas_[0] * fabs(msg->rot1) + alphas_[1] * msg->translation),
+          odom.initial_rotation,
+          alphas_[0] * fabs(odom.initial_rotation) + alphas_[1] * odom.translation),
       trans_rand(
-          msg->translation,
-          alphas_[2] * msg->translation + alphas_[3] * fabs(msg->rot1 + msg->rot2)
+          odom.translation,
+          alphas_[2] * odom.translation + alphas_[3] * fabs(odom.initial_rotation + odom.final_rotation)
           ),
       rot2_rand(
-          msg->rot2,
-          alphas_[0] * fabs(msg->rot2) + alphas_[1] * msg->translation);
+          odom.final_rotation,
+          alphas_[0] * fabs(odom.final_rotation) + alphas_[1] * odom.translation);
 
-  for(auto& particle: *subparticles) {
+  for(auto& particle : *subparticles) {
 
     // Rotate to final position
     particle.theta += rot1_rand(generator_);
@@ -56,6 +60,24 @@ void Robot::processOdometryMeasurement(const clt_msgs::CustomOdometryConstPtr &m
     // Rotate to final and normalize
     particle.theta = angles::normalize_angle(particle.theta + rot2_rand(generator_));
   }
+}
+
+
+void Robot::targetCallback(const clt_msgs::MeasurementStampedConstPtr &msg) {
+  target_cache_.emplace(target_data::fromRosMsg(msg));
+}
+
+void Robot::processTargetMeasurement() {
+  
+}
+
+
+void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
+  landmark_cache_.emplace(sensor::landmark::fromRosMsg(msg));
+}
+
+void Robot::processLandmarkMeasurement() {
+  
 }
 
 } // namespace pfuclt::robot
