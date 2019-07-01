@@ -10,6 +10,7 @@
 
 #include <random>
 #include <queue>
+#include <mutex>
 
 #include <clt_msgs/CustomOdometry.h>
 
@@ -53,6 +54,7 @@ class Robot {
   // subscriber and queue to take odometry messages
   ros::Subscriber odometry_sub_;
   std::queue<odometry::OdometryMeasurement> odometry_cache_;
+  std::mutex odometry_mutex_;
 
   // subscriber and queue to take target messages
   ros::Subscriber target_sub_;
@@ -65,28 +67,35 @@ class Robot {
  public:
   // pointer to this robot's sub-particles
   particle::RobotSubParticles *subparticles;
+  std::mutex subparticles_mutex_;
+
 
  private:
   void getAlphas();
   
   /**
-   * @brief odometryCallback - event-driven function that should be called when
+   * @brief Event-driven function that should be called when
    * new odometry data is received
    */
   void odometryCallback(const clt_msgs::CustomOdometryConstPtr&);
-  void processOdometryUntil(const ros::Time& t);
-  void processOdometryMeasurement();
+  /**
+   * @brief Use robot motion model to estimate new particle's state
+   * for this robot.
+   * @details Odometry retrieved in method odometryCallback is used
+   * to calculate the new particle state.
+   */
+  void processOldestOdometry();
 
   /**
-   * @brief targetCallBack - event-driven function that should be called when
+   * @brief Event-driven function that should be called when
    * new target data is received
    */
   void targetCallback(const clt_msgs::MeasurementStampedConstPtr&);
   void processTargetMeasurement();
 
   /**
-   * @brief landmarkDataCallback - event-driven function which should be called
-   * when new landmark data is received
+   * @brief Event-driven function which should be called when
+   * new landmark data is received
    */
   void landmarkCallback(const clt_msgs::MeasurementArrayConstPtr&);
   void processLandmarkMeasurement();
@@ -103,9 +112,14 @@ class Robot {
    * Constructor
    * @param idx the id of this robot (usually should start at 0)
    * @param subparticles pointer to the subparticles of these robot in a set of particles
-   * @param odometry_cb_queue pointer to a callback queue to associate with the odometry subscriber
    */
-  Robot(uint id, particle::RobotSubParticles* p_subparticles, ros::CallbackQueue* odometry_cb_queue);
+  Robot(uint id, particle::RobotSubParticles* p_subparticles);
+
+  /**
+   * @brief Process all cached odometry messages, sampling the motion model for each particle
+   */
+  void predict();
+
 
   //TODO: Robot(std::string name);
 };

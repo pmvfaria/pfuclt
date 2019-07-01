@@ -8,31 +8,29 @@
 
 namespace pfuclt::robot {
 
-Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, ros::CallbackQueue* odometry_cb_queue)
+Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles)
   : idx(id), name(Robot::name_prefix_ + std::to_string(idx+1)),
   generator_(rd_()), nh_("/robots/"+name), subparticles(p_subparticles) {
 
   getAlphas();
 
-  nh_.setCallbackQueue(odometry_cb_queue);
-  odometry_sub_ = nh_.subscribe("odometry", 100, &Robot::odometryCallback, this);
-
+  odometry_sub_ = nh_.subscribe("/odometry", 100, &Robot::odometryCallback, this);
+  target_sub_ = nh_.subscribe("/target", 100, &Robot::targetCallback, this);
+  landmark_sub_ = nh_.subscribe("/landmark", 100, &Robot::landmarkCallback, this);
 }
 
 void Robot::odometryCallback(const clt_msgs::CustomOdometryConstPtr &msg) {
+  std::lock_guard<std::mutex> lock(odometry_mutex_);
   odometry_cache_.emplace(odometry::fromRosCustomMsg(msg));
 }
 
-void Robot::processOdometryUntil(const ros::Time& t) {
-
-
-}
-
-void Robot::processOdometryMeasurement() {
+void Robot::processOldestOdometry() {
 
   // Retrieve oldest element of queue
+  std::unique_lock<std::mutex> odometry_lock(odometry_mutex_);
   auto odom = odometry_cache_.front();
   odometry_cache_.pop();
+  odometry_lock.unlock();
 
   // Robot motion model (from Probabilistic Robotics book)
   std::normal_distribution<double>
@@ -47,37 +45,56 @@ void Robot::processOdometryMeasurement() {
           odom.final_rotation,
           alphas_[0] * fabs(odom.final_rotation) + alphas_[1] * odom.translation);
 
-  for(auto& particle : *subparticles) {
+  {
+    std::lock_guard<std::mutex> subparticles_lock(subparticles_mutex_);
+    for(auto& particle : *subparticles) {
 
-    // Rotate to final position
-    particle.theta += rot1_rand(generator_);
+      // Rotate to final position
+      particle.theta += rot1_rand(generator_);
 
-    // Sample and translate
-    const double sample_translation = trans_rand(generator_);
-    particle.x += sample_translation * cos(particle.theta);
-    particle.y += sample_translation * sin(particle.theta);
+      // Sample and translate
+      const double sample_translation = trans_rand(generator_);
+      particle.x += sample_translation * cos(particle.theta);
+      particle.y += sample_translation * sin(particle.theta);
 
-    // Rotate to final and normalize
-    particle.theta = angles::normalize_angle(particle.theta + rot2_rand(generator_));
+      // Rotate to final and normalize
+      particle.theta = angles::normalize_angle(particle.theta + rot2_rand(generator_));
+    }
   }
 }
 
+void Robot::predict() {
+  while (!odometry_cache_.empty())
+  {
+    processOldestOdometry();
+  }
+}
 
 void Robot::targetCallback(const clt_msgs::MeasurementStampedConstPtr &msg) {
-  target_cache_.emplace(target_data::fromRosMsg(msg));
+  //target_cache_.emplace(target_data::fromRosMsg(msg));
 }
 
 void Robot::processTargetMeasurement() {
   
 }
 
-
 void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
-  landmark_cache_.emplace(sensor::landmark::fromRosMsg(msg));
+  landmark_cache_.emplace(landmark::fromRosMsg(msg));
 }
 
 void Robot::processLandmarkMeasurement() {
-  
+
+  // Retrieve oldest element of queue
+  auto lk = landmark_cache_.front();
+  landmark_cache_.pop();  // Observation in robot frame
+
+  // TODO: Convert landmark position in global frame (x,y) to robot frame (range,bearing)
+
+  for (auto& landmark: lk.measurements) {
+
+    
+  }
+
 }
 
 } // namespace pfuclt::robot
