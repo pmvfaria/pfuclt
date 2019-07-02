@@ -20,17 +20,14 @@ Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, const m
 }
 
 void Robot::odometryCallback(const clt_msgs::CustomOdometryConstPtr &msg) {
-  std::lock_guard<std::mutex> lock(odometry_mutex_);
   odometry_cache_.emplace(odometry::fromRosCustomMsg(msg));
 }
 
 void Robot::processOldestOdometry() {
 
   // Retrieve oldest element of queue
-  std::unique_lock<std::mutex> odometry_lock(odometry_mutex_);
   auto odom = odometry_cache_.front();
   odometry_cache_.pop();
-  odometry_lock.unlock();
 
   // Robot motion model (from Probabilistic Robotics book)
   std::normal_distribution<double>

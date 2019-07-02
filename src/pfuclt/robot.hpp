@@ -57,7 +57,6 @@ class Robot {
   // subscriber and queue to take odometry messages
   ros::Subscriber odometry_sub_;
   std::queue<odometry::OdometryMeasurement> odometry_cache_;
-  std::mutex odometry_mutex_;
 
   // subscriber and queue to take target messages
   ros::Subscriber target_sub_;
