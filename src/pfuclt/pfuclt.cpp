@@ -45,7 +45,7 @@ PFUCLT::PFUCLT(const uint self_robot_id)
   // Create robots
   robots_.reserve((size_t)num_robots_);
   for (uint r = 0; r < (uint) num_robots_; ++r) {
-    robots_.emplace_back(std::make_unique<::pfuclt::robot::Robot>(r, &particles_->robots[r]));
+    robots_.emplace_back(std::make_unique<::pfuclt::robot::Robot>(r, &particles_->robots[r], map_.get()));
     ROS_INFO_STREAM("Robot created with index " << robots_[r]->idx << " and name " << robots_[r]->name);
   }
 }

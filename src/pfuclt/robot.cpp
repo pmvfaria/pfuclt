@@ -8,9 +8,9 @@
 
 namespace pfuclt::robot {
 
-Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, map::LandmarkMap* map)
+Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, map::LandmarkMap* p_map)
   : idx(id), name(Robot::name_prefix_ + std::to_string(idx+1)),
-  generator_(rd_()), nh_("/robots/"+name), subparticles(p_subparticles), map(map) {
+  generator_(rd_()), nh_("/robots/"+name), subparticles(p_subparticles), map(p_map) {
 
   getAlphas();
 
@@ -84,7 +84,7 @@ void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
 
 void Robot::processLandmarkMeasurement() {
 
-  std::vector<double> weights(subparticles->size,1.0);
+  std::vector<double> weights(subparticles->size(), 1.0);
 
   // Retrieve oldest element of queue
   auto lk = landmark_cache_.front();
