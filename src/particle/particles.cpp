@@ -47,14 +47,10 @@ Particles &Particles::initialize(
 
   for (uint r = 0; r < robot_dist.size(); ++r) {
     const auto &params = robot_dist[r];
-    const auto
-      &params_x (params[0]),
-      &params_y (params[1]),
-      &params_theta (params[2]);
-    std::uniform_real_distribution<double>
-      dist_x(params_x[0], params_x[1]),
-      dist_y(params_y[0], params_y[1]),
-      dist_theta(params_theta[0], params_theta[1]);
+    const auto &params_x (params[0]), &params_y (params[1]), &params_theta (params[2]);
+    std::uniform_real_distribution<double> dist_x(params_x[0], params_x[1]),
+                                           dist_y(params_y[0], params_y[1]),
+                                           dist_theta(params_theta[0], params_theta[1]);
     for (auto &subparticle: robots[r]) {
       subparticle.x = dist_x(generator);
       subparticle.y = dist_y(generator);
@@ -64,14 +60,10 @@ Particles &Particles::initialize(
 
   for (uint t = 0; t < target_dist.size(); ++t) {
     const auto &params = target_dist[t];
-    const auto
-      &params_x (params[0]),
-      &params_y (params[1]),
-      &params_z (params[2]);
-    std::uniform_real_distribution<double>
-      dist_x(params_x[0], params_x[1]),
-      dist_y(params_y[0], params_y[1]),
-      dist_z(params_z[0], params_z[1]);
+    const auto &params_x (params[0]), &params_y (params[1]), &params_z (params[2]);
+    std::uniform_real_distribution<double> dist_x(params_x[0], params_x[1]),
+                                           dist_y(params_y[0], params_y[1]),
+                                           dist_z(params_z[0], params_z[1]);
     for (auto &subparticle: targets[t]) {
       subparticle.x = dist_x(generator);
       subparticle.y = dist_y(generator);

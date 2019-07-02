@@ -6,6 +6,7 @@
 
 #include <random>
 #include <queue>
+#include <cmath>
 
 #include <clt_msgs/Measurement.h>
 
@@ -19,7 +20,7 @@ using generator_type = std::mt19937;
 
 /**
  * @brief The target class - Contains all the information of a specific target, like its id
- * or a pointer to its subparicles set in the particle filter. The target motion model is
+ * or a pointer to its subparicle set in the particle filter. The target motion model is
  * implemented here.
  * All targets should be instances if this class.
  */

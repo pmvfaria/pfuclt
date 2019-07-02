@@ -6,7 +6,7 @@
 #define PFUCLT_PFUCLT_HPP
 
 #include <ros/ros.h>
-//#include "../particle/particles.hpp"
+#include "../particle/particles.hpp"
 #include "../map/map_ros.hpp"
 #include "robot.hpp"
 #include "target.hpp"
@@ -28,7 +28,7 @@ class PFUCLT {
   ros::NodeHandle nh_{""};
   ros::NodeHandle pnh_{"~"};
 
-  int num_robots_;
+  //int num_robots_;
 
   std::vector<std::unique_ptr<::pfuclt::robot::Robot>> robots_;
   std::vector<std::unique_ptr<::pfuclt::target::Target>> targets_;
@@ -74,6 +74,7 @@ class PFUCLT {
   explicit PFUCLT(const uint self_robot_id);
 
   void predict();
+  void update();
 
  public:
   void run();

@@ -8,9 +8,9 @@
 
 namespace pfuclt::robot {
 
-Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles)
+Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, map::LandmarkMap* map)
   : idx(id), name(Robot::name_prefix_ + std::to_string(idx+1)),
-  generator_(rd_()), nh_("/robots/"+name), subparticles(p_subparticles) {
+  generator_(rd_()), nh_("/robots/"+name), subparticles(p_subparticles), map(map) {
 
   getAlphas();
 
@@ -84,15 +84,32 @@ void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
 
 void Robot::processLandmarkMeasurement() {
 
+  std::vector<double> weights(subparticles->size,1.0);
+
   // Retrieve oldest element of queue
   auto lk = landmark_cache_.front();
   landmark_cache_.pop();  // Observation in robot frame
 
-  // TODO: Convert landmark position in global frame (x,y) to robot frame (range,bearing)
-
   for (auto& landmark: lk.measurements) {
 
+    std::array<double,2> landmark_global{map->landmarks[landmark.id].x,
+                                         map->landmarks[landmark.id].y};
+
+    //TODO Convert landmark position in robot frame (range,bearing) to global frame (x,y)
     
+
+    for(auto& particle: *subparticles) {
+
+      // Robot position
+      std::array<double,2> robot_position{particle.x,
+                                          particle.y};
+
+      // TODO Calculate error in observation
+      std::array<double,2> error;
+
+      // Update weight for this particle
+      
+    }
   }
 
 }

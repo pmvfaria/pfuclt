@@ -64,13 +64,19 @@ void PFUCLT::predict()
   }
 }
 
+void PFUCLT::update()
+{
+  
+}
+
 void PFUCLT::run() {
   robot_spinner_->start();
 
   while(ros::ok()) {
     robot_spinner_->stop();
-    predict();
 
+    predict();
+    update();
 
     robot_spinner_->start();
     rate_.sleep();

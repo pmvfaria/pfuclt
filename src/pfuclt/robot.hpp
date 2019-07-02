@@ -11,10 +11,13 @@
 #include <random>
 #include <queue>
 #include <mutex>
+#include <cmath>
+#include <Eigen/Dense>
 
 #include <clt_msgs/CustomOdometry.h>
 
 #include "../particle/particles.hpp"
+#include "../map/landmark_map.hpp"
 #include "../sensor/odometry_data.hpp"
 #include "../sensor/target_data.hpp"
 #include "../sensor/landmark_data.hpp"
@@ -69,6 +72,9 @@ class Robot {
   particle::RobotSubParticles *subparticles;
   std::mutex subparticles_mutex_;
 
+  // pointer to landmark map
+  map::LandmarkMap *map;
+
 
  private:
   void getAlphas();
@@ -113,14 +119,15 @@ class Robot {
    * @param idx the id of this robot (usually should start at 0)
    * @param subparticles pointer to the subparticles of these robot in a set of particles
    */
-  Robot(uint id, particle::RobotSubParticles* p_subparticles);
+  Robot(uint id, particle::RobotSubParticles* p_subparticles, map::LandmarkMap* map);
 
   /**
    * @brief Process all cached odometry messages, sampling the motion model for each particle
    */
   void predict();
 
-
+  void update();
+  
   //TODO: Robot(std::string name);
 };
 

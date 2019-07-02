@@ -15,6 +15,7 @@ std::ostream &operator<<(std::ostream &os, const Landmark &p) {
   return os << "Landmark " << p.id << " located at {x=" << p.x << ", y=" << p.y << '}';
 }
 
+
 LandmarkMap::LandmarkMap(const double& center_x, const double& center_y, const double& size_x, const double& size_y) :
     center_x_(center_x), center_y_(center_y) {
   setSize(size_x, size_y);
@@ -73,5 +74,6 @@ std::ostream& LandmarkMap::print(std::ostream &os) const{
 std::ostream& operator<<(std::ostream &os, const LandmarkMap &map) {
   return map.print(os);
 }
+
 
 } // namespace pfuclt::map
