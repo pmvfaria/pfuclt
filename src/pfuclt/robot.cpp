@@ -23,12 +23,7 @@ void Robot::odometryCallback(const clt_msgs::CustomOdometryConstPtr &msg) {
   odometry_cache_.emplace(odometry::fromRosCustomMsg(msg));
 }
 
-void Robot::processOldestOdometry() {
-
-  // Retrieve oldest element of queue
-  auto odom = odometry_cache_.front();
-  odometry_cache_.pop();
-
+void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom) {
   // Robot motion model (from Probabilistic Robotics book)
   std::normal_distribution<double>
       rot1_rand(
@@ -63,7 +58,10 @@ void Robot::processOldestOdometry() {
 void Robot::predict() {
   while (!odometry_cache_.empty())
   {
-    processOldestOdometry();
+    // Retrieve oldest element from queue
+    auto odom = odometry_cache_.front();
+    odometry_cache_.pop();
+    processOdometryMeasurement(odom); 
   }
 }
 

@@ -89,7 +89,7 @@ class Robot {
    * @details Odometry retrieved in method odometryCallback is used
    * to calculate the new particle state.
    */
-  void processOldestOdometry();
+  void processOdometryMeasurement(const odometry::OdometryMeasurement&);
 
   /**
    * @brief Event-driven function that should be called when
