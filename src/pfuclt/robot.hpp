@@ -73,7 +73,7 @@ class Robot {
   std::mutex subparticles_mutex_;
 
   // pointer to landmark map
-  map::LandmarkMap *map;
+  const map::LandmarkMap *map;
 
 
  private:
@@ -118,8 +118,9 @@ class Robot {
    * Constructor
    * @param idx the id of this robot (usually should start at 0)
    * @param subparticles pointer to the subparticles of these robot in a set of particles
+   * @param map pointer to the the landmark map for reference
    */
-  Robot(uint id, particle::RobotSubParticles* p_subparticles, map::LandmarkMap* map);
+  Robot(const uint id, particle::RobotSubParticles* p_subparticles, const map::LandmarkMap* map);
 
   /**
    * @brief Process all cached odometry messages, sampling the motion model for each particle

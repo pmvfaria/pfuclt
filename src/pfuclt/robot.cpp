@@ -8,7 +8,7 @@
 
 namespace pfuclt::robot {
 
-Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, map::LandmarkMap* p_map)
+Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, const map::LandmarkMap* p_map)
   : idx(id), name(Robot::name_prefix_ + std::to_string(idx+1)),
   generator_(rd_()), nh_("/robots/"+name), subparticles(p_subparticles), map(p_map) {
 

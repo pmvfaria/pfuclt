@@ -3,10 +3,12 @@
 //
 
 #include <future>
+#include <parallel/algorithm>
 
 #include "pfuclt.hpp"
 #include <boost/thread.hpp>
 #include "../thirdparty/stopwatch/StopWatch.h"
+
 
 namespace pfuclt::algorithm {
 
@@ -50,18 +52,26 @@ PFUCLT::PFUCLT(const uint self_robot_id)
   }
 }
 
+void PFUCLT::foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) {
+  if(tag)
+    __gnu_parallel::for_each(robots_.begin(), robots_.end(), f, tag.value());
+  else
+    std::for_each(robots_.begin(), robots_.end(), f);
+}
+
+void PFUCLT::foreach_robot(std::function<void(const std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) const {
+  if(tag)
+    __gnu_parallel::for_each(robots_.begin(), robots_.end(), f, tag.value());
+  else
+    std::for_each(robots_.begin(), robots_.end(), f);
+}
+
 void PFUCLT::predict()
 {
-  std::vector<std::future<void>> results;
-  for (auto &robot: robots_) 
-  {
-    results.emplace_back(pool_.push(
-      [&robot](int id){robot->predict();}
-    ));
-  }
-  for (auto &result: results) {
-    result.get();
-  }
+  this->foreach_robot([] (auto &robot) -> void {
+      robot->predict();
+    },
+    __gnu_parallel::parallel_unbalanced);
 }
 
 void PFUCLT::update()

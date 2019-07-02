@@ -5,11 +5,15 @@
 #ifndef PFUCLT_PFUCLT_HPP
 #define PFUCLT_PFUCLT_HPP
 
+#include <parallel/types.h>
+#include <functional>
+
 #include <ros/ros.h>
 #include "../particle/particles.hpp"
 #include "../map/map_ros.hpp"
 #include "robot.hpp"
 #include "target.hpp"
+
 
 //#include "../sensor/odometry_data.hpp"
 
@@ -18,6 +22,10 @@
 #include "../thirdparty/CTPL/ctpl_stl.h"
 
 namespace pfuclt::algorithm {
+
+  // Alias to the optional use of parallelization from __gnu_parallel
+  using optional_parallel = std::optional<const __gnu_parallel::_Parallelism>;
+
 
 /**
   * @brief The Particle filter class - main class of the particle filter algorithm.
@@ -57,6 +65,15 @@ class PFUCLT {
    * @return true if particles initialized with parameters, false otherwise
    */
   const bool initializeParticles();
+
+  /**
+   * @brief Apply function f to every Robot
+   * @param f Function to apply to every robot
+   * @param tag Optional parallelization tag from __gnu_parallel
+   */
+  void foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag = std::nullopt);
+  void foreach_robot(std::function<void(const std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag = std::nullopt) const;
+
 
  public:
   PFUCLT() = delete;
