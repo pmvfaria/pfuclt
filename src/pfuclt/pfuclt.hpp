@@ -23,8 +23,8 @@
 
 namespace pfuclt::algorithm {
 
-  // Alias to the optional use of parallelization from __gnu_parallel
-  using optional_parallel = std::optional<const __gnu_parallel::_Parallelism>;
+// Alias to the optional use of parallelization from __gnu_parallel
+using optional_parallel = std::optional<const __gnu_parallel::_Parallelism>;
 
 
 /**
@@ -32,7 +32,7 @@ namespace pfuclt::algorithm {
   * Creates and initializes the particle filter
   */
 class PFUCLT {
- private:
+ protected:
   ros::NodeHandle nh_{""};
   ros::NodeHandle pnh_{"~"};
 
@@ -71,8 +71,10 @@ class PFUCLT {
    * @param f Function to apply to every robot
    * @param tag Optional parallelization tag from __gnu_parallel
    */
-  void foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag = std::nullopt);
-  void foreach_robot(std::function<void(const std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag = std::nullopt) const;
+  void foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f,
+                      const optional_parallel& tag = std::nullopt);
+  void foreach_robot(std::function<void(const std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, 
+                      const optional_parallel& tag = std::nullopt) const;
 
 
  public:
