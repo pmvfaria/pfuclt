@@ -4,7 +4,8 @@
 namespace pfuclt::target {
 
 Target::Target(const uint id, particle::TargetSubParticles* p_subparticles)
-  : idx(id), generator_(rd_()), subparticles(p_subparticles) { }
+  : idx(id), name(Target::name_prefix_ + std::to_string(idx+1)), 
+    generator_(rd_()), subparticles(p_subparticles) { }
 
 
 void Target::processTargetModel() {

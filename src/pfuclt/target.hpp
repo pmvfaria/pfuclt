@@ -17,11 +17,10 @@ namespace pfuclt::target {
 
 using generator_type = std::mt19937;
 
-
 /**
- * @brief The target class - Contains all the information of a specific target, like its id
- * or a pointer to its subparicle set in the particle filter. The target motion model is
- * implemented here.
+ * @brief The target class - Contains all the information of a specific target, like its
+ * id or a pointer to its subparicle set in the particle filter. The target motion model
+ * is implemented here.
  * All targets should be instances if this class.
  */
 class Target {
@@ -30,12 +29,17 @@ class Target {
   // id of this target - they should start at 0
   const uint idx;
 
+  // name of this target - should end with a number
+  const std::string name;
+
   // pointer to this target's sub-particles
   particle::TargetSubParticles *subparticles;
 
  private:
   std::random_device rd_{};
   generator_type generator_;
+
+  static constexpr auto name_prefix_ = "target";
 
   void processTargetModel();
 
