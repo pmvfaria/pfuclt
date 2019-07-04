@@ -12,7 +12,7 @@ LandmarkMeasurements fromRosMsg(const clt_msgs::MeasurementArrayConstPtr &msg){
 
   for(const auto& m: msg->measurements){
     ROS_ASSERT_MSG(m.type == clt_msgs::Measurement::LANDMARK_RANGE_BEARING, "Only LANDMARK_RANGE_BEARING is supported");
-    lms.measurements.emplace_back(LandmarkMeasurement{m.id, m.range, m.bearing, m.noise});
+    lms.measurements.emplace_back(LandmarkMeasurement{m.id, m.range, m.bearing});
   }
 
   return lms;

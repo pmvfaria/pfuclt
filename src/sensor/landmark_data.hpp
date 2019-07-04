@@ -11,7 +11,7 @@ namespace pfuclt::sensor::landmark{
 
 struct LandmarkMeasurement{
   uint16_t id;
-  double range, bearing, noise;
+  double range, bearing;
 };
 
 struct LandmarkMeasurements{
