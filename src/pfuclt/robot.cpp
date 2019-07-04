@@ -87,8 +87,17 @@ int Robot::landmarksUpdate(particle::WeightSubParticles & probabilities) {
     return m.seen;
   });
 
+  for (const auto& measurement: landmark_measurements_->measurements)
+  {
+    auto cov(std::move(landmark::uncertaintyModel(measurement)));
+    
+  }
+
+
   landmark_measurements_.reset();
   return number_seen;
+
+
 
 /*
   std::vector<double> weights(subparticles->size(), 1.0);

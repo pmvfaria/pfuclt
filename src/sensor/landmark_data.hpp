@@ -10,6 +10,13 @@
 
 namespace pfuclt::sensor::landmark{
 
+inline double K_range;
+inline double K_bearing;
+
+struct LandmarkLikelihood{
+  double dd, pp, xx, yy;
+};
+
 struct LandmarkMeasurement{
   uint16_t id;
   bool seen;
@@ -27,6 +34,8 @@ struct LandmarkMeasurements{
     measurements.reserve(number_measurements);
   }
 };
+
+LandmarkLikelihood uncertaintyModel(const LandmarkMeasurement&);
 
 /**
  * @brief Retrieves landmark measurements from ROS message

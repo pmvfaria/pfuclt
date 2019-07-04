@@ -20,6 +20,8 @@ PFUCLT::PFUCLT(const uint self_robot_id)
   ROS_ASSERT_MSG(pnh_.getParam("particles", num_particles), "Parameter num_particles is required");
   ROS_ASSERT_MSG(nh_.getParam("num_robots_", num_robots_), "Parameter num_robots_ is required");
   ROS_ASSERT_MSG(nh_.getParam("num_targets", num_targets), "Parameter num_targets is required");
+  ROS_ASSERT_MSG(nh_.getParam("landmark_K_range", sensor::landmark::K_range), "Parameter landmark_K_range is required");
+  ROS_ASSERT_MSG(nh_.getParam("landmark_K_bearing", sensor::landmark::K_bearing), "Parameter landmkar_K_bearing is required");
 
   // Get landmarks map
   const auto num_landmarks = this->getLandmarkMap();
