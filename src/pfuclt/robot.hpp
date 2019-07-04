@@ -64,7 +64,7 @@ class Robot {
 
   // subscriber and queue to take landmark messages
   ros::Subscriber landmark_sub_;
-  std::queue<landmark::LandmarkMeasurements> landmark_cache_;
+  std::unique_ptr<landmark::LandmarkMeasurements> landmark_measurements_;
 
  public:
   // pointer to this robot's sub-particles
@@ -103,7 +103,7 @@ class Robot {
    * new landmark data is received
    */
   void landmarkCallback(const clt_msgs::MeasurementArrayConstPtr&);
-  void processLandmarkMeasurement();
+  int landmarksUpdate(particle::WeightSubParticles & probabilities);
 
 
  public:

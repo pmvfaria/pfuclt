@@ -61,7 +61,7 @@ void Robot::predict() {
     // Retrieve oldest element from queue
     auto odom = odometry_cache_.front();
     odometry_cache_.pop();
-    processOdometryMeasurement(odom); 
+    processOdometryMeasurement(odom);
   }
 }
 
@@ -74,12 +74,25 @@ void Robot::processTargetMeasurement() {
 }
 
 void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
-  landmark_cache_.emplace(landmark::fromRosMsg(msg));
+  landmark_measurements_ = std::move(landmark::fromRosMsg(msg));
 }
 
-void Robot::processLandmarkMeasurement() {
+int Robot::landmarksUpdate(particle::WeightSubParticles & probabilities) {
+  if (landmark_measurements_ == nullptr)
+  {
+    return -1;
+  }
 
+  auto number_seen = std::count_if(landmark_measurements_->measurements.begin(), landmark_measurements_->measurements.end(),[](const auto& m) {
+    return m.seen;
+  });
+
+  landmark_measurements_.reset();
+  return number_seen;
+
+/*
   std::vector<double> weights(subparticles->size(), 1.0);
+
 
   // Retrieve oldest element of queue
   auto lk = landmark_cache_.front();
@@ -106,7 +119,7 @@ void Robot::processLandmarkMeasurement() {
       
     }
   }
-
+*/
 }
 
 } // namespace pfuclt::robot
