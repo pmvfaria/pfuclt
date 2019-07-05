@@ -84,11 +84,6 @@ void PFUCLT::predictTargets()
 
 void PFUCLT::fuseLandmarks()
 {
-
-}
-
-void PFUCLT::fuseTargets()
-{
   std::vector<particle::WeightSubParticles> probabilities(num_robots, particle::WeightSubParticles(num_particles));
   this->foreach_robot([&probabilities, r=0] (auto &robot) mutable -> void {
       auto landmarks_seen = robot->landmarksUpdate(probabilities[r]);
@@ -98,6 +93,11 @@ void PFUCLT::fuseTargets()
       }
     },
     __gnu_parallel::parallel_unbalanced);
+}
+
+void PFUCLT::fuseTargets()
+{
+
 }
 
 void PFUCLT::run() {
