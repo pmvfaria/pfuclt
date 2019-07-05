@@ -36,7 +36,7 @@ class Particles {
    * @param vec the vector to be normalized
    * @return true if able to normalize, false otherwise ( weights all zero )
    */
-  const bool normalize__impl(std::vector<double>& vec) const;
+  bool normalize__impl(std::vector<double>& vec) const;
 
  public:
   // Delete some constructors and operators

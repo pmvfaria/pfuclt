@@ -57,14 +57,14 @@ class PFUCLT {
    * @details hardcoded /world/landmarks parameter is used
    * @return number of added landmarks
    */
-  const std::size_t getLandmarkMap();
+  std::size_t getLandmarkMap();
 
   /**
    * @brief Initialize particles using ROS parameter server params
    * @remark If the parameters are not found, initializes particles randomly
    * @return true if particles initialized with parameters, false otherwise
    */
-  const bool initializeParticles();
+  bool initializeParticles();
 
   /**
    * @brief Apply function f to every Robot

@@ -74,9 +74,8 @@ class Robot {
   // pointer to landmark map
   const map::LandmarkMap *map;
 
-
  private:
-  void getAlphas();
+  void initialize();
   
   /**
    * @brief Event-driven function that should be called when

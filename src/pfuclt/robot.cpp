@@ -10,13 +10,13 @@ namespace pfuclt::robot {
 
 Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, const map::LandmarkMap* p_map)
   : idx(id), name(Robot::name_prefix_ + std::to_string(idx+1)),
-  generator_(rd_()), nh_("/robots/"+name), subparticles(p_subparticles), map(p_map) {
+  generator_(rd_()), nh_("/robots/"+name),
+  odometry_sub_(nh_.subscribe("/odometry", 100, &Robot::odometryCallback, this)),
+  target_sub_(nh_.subscribe("/target", 100, &Robot::targetCallback, this)),
+  landmark_sub_(nh_.subscribe("/landmark", 100, &Robot::landmarkCallback, this)),
+  subparticles(p_subparticles), map(p_map) {
 
-  getAlphas();
-
-  odometry_sub_ = nh_.subscribe("/odometry", 100, &Robot::odometryCallback, this);
-  target_sub_ = nh_.subscribe("/target", 100, &Robot::targetCallback, this);
-  landmark_sub_ = nh_.subscribe("/landmark", 100, &Robot::landmarkCallback, this);
+  this->initialize();
 }
 
 void Robot::odometryCallback(const clt_msgs::CustomOdometryConstPtr &msg) {
@@ -65,7 +65,7 @@ void Robot::predict() {
   }
 }
 
-void Robot::targetCallback(const clt_msgs::MeasurementStampedConstPtr &msg) {
+void Robot::targetCallback(const clt_msgs::MeasurementStampedConstPtr& msg) {
   //target_cache_.emplace(target_data::fromRosMsg(msg));
 }
 
@@ -77,7 +77,7 @@ void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
   landmark_measurements_ = std::move(landmark::fromRosMsg(msg));
 }
 
-int Robot::landmarksUpdate(particle::WeightSubParticles & probabilities) {
+int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
   if (landmark_measurements_ == nullptr)
   {
     return -1;

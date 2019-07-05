@@ -9,7 +9,7 @@ namespace pfuclt {
 
 namespace algorithm {
 
-const std::size_t PFUCLT::getLandmarkMap() {
+std::size_t PFUCLT::getLandmarkMap() {
 
   ros::NodeHandle wnh{"/world"};
 
@@ -19,7 +19,7 @@ const std::size_t PFUCLT::getLandmarkMap() {
   return ::pfuclt::map::landmarksFromParameter(*map_, "landmarks", wnh);
 }
 
-const bool PFUCLT::initializeParticles() {
+bool PFUCLT::initializeParticles() {
 
   using namespace ::pfuclt::particle;
   using namespace ::XmlRpc;
@@ -93,7 +93,7 @@ const bool PFUCLT::initializeParticles() {
 
 namespace robot{
 
-void Robot::getAlphas() {
+void Robot::initialize() {
 
   using namespace ::XmlRpc;
   ros::NodeHandle anh{"/alphas"};
