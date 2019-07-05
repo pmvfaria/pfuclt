@@ -12,10 +12,6 @@ LandmarkLikelihood uncertaintyModel(const LandmarkMeasurement& m) {
   LandmarkLikelihood cov;
   cov.dd = K_range * m.range * m.range;
   cov.pp = K_bearing * (1 / (m.range + 1));
-  cov.xx = pow(cos(m.bearing), 2) * cov.dd +
-           pow(sin(m.bearing), 2) * (pow(m.range, 2) + cov.dd) * cov.pp;
-  cov.yy = pow(sin(m.bearing), 2) * cov.dd +
-           pow(cos(m.bearing), 2) * (pow(m.range, 2) + cov.dd) * cov.pp;
   return cov;
 }
 

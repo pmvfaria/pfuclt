@@ -38,7 +38,6 @@ void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom
           alphas_[0] * fabs(odom.final_rotation) + alphas_[1] * odom.translation);
 
   {
-    std::lock_guard<std::mutex> subparticles_lock(subparticles_mutex_);
     for(auto& particle : *subparticles) {
 
       // Rotate to final position
@@ -87,10 +86,39 @@ int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
     return m.seen;
   });
 
-  for (const auto& measurement: landmark_measurements_->measurements)
+  for (const auto& m: landmark_measurements_->measurements)
   {
-    auto cov(landmark::uncertaintyModel(measurement));
-    
+    if (m.seen)
+    {
+      auto cov(landmark::uncertaintyModel(m));
+
+      std::for_each(subparticles->begin(), subparticles->end(), [this, idx=0, &m, &cov, &probabilities] (const auto &p) mutable -> void
+      {
+        // All to robot frame in cartesian coordinates
+        double m_x {m.range * cos(m.bearing + p.theta)};
+        double m_y {m.range * sin(m.bearing + p.theta)};
+        double lm_local_x {this->map->landmarks[m.id].x - p.x};
+        double lm_local_y {this->map->landmarks[m.id].y - p.y};
+
+        double m_length {sqrt(m_x * m_x + m_y * m_y)};
+        double m_angle {atan2(m_y, m_x)};
+        double lm_length {sqrt(lm_local_x * lm_local_x + lm_local_y * lm_local_y)};
+        double lm_angle {atan2(lm_local_y, lm_local_x)};
+
+        double z_length {m_length - lm_length};
+        double z_angle {m_angle - lm_angle};
+
+        //TODO confirm model
+        // Bivariate Gaussian
+        double num_length {z_length * z_length / (2.0 * cov.dd * cov.dd)};
+        double num_angle {z_angle * z_angle / (2.0 * cov.pp * cov.pp)};
+        double numerator {exp(-1.0 * (num_length + num_angle))};
+        double denominator {2.0 * M_PI * cov.dd * cov.pp};
+
+        probabilities[idx] = numerator / denominator;
+        ++idx;
+      });
+    }
   }
 
 

@@ -10,9 +10,7 @@
 
 #include <random>
 #include <queue>
-#include <mutex>
 #include <cmath>
-#include <Eigen/Dense>
 
 #include <clt_msgs/CustomOdometry.h>
 
@@ -69,7 +67,6 @@ class Robot {
  public:
   // pointer to this robot's sub-particles
   particle::RobotSubParticles *subparticles;
-  std::mutex subparticles_mutex_;
 
   // pointer to landmark map
   const map::LandmarkMap *map;

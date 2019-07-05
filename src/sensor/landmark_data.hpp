@@ -14,7 +14,7 @@ inline double K_range;
 inline double K_bearing;
 
 struct LandmarkLikelihood{
-  double dd, pp, xx, yy;
+  double dd, pp;
 };
 
 struct LandmarkMeasurement{
