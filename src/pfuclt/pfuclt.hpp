@@ -83,6 +83,7 @@ class PFUCLT {
   PFUCLT& operator=(PFUCLT &&) = delete; // no move assign
 
   uint self_robot_id;
+  int num_particles{0}, num_robots{0}, num_targets{0}, num_landmarks{0};
 
   /**
    * @brief Main constructor of PFUCLT
@@ -90,8 +91,10 @@ class PFUCLT {
    */
   explicit PFUCLT(const uint self_robot_id);
 
-  void predict();
-  void update();
+  void predictRobots();
+  void predictTargets();
+  void fuseLandmarks();
+  void fuseTargets();
 
  public:
   void run();

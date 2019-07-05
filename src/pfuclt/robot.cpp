@@ -54,7 +54,7 @@ void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom
   }
 }
 
-void Robot::predict() {
+void Robot::motionModel() {
   while (!odometry_cache_.empty())
   {
     // Retrieve oldest element from queue
@@ -81,10 +81,6 @@ int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
   {
     return -1;
   }
-
-  auto number_seen = std::count_if(landmark_measurements_->measurements.begin(), landmark_measurements_->measurements.end(),[](const auto& m) {
-    return m.seen;
-  });
 
   for (const auto& m: landmark_measurements_->measurements)
   {
@@ -121,42 +117,18 @@ int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
     }
   }
 
-
-  landmark_measurements_.reset();
-  return number_seen;
-
-
-
-/*
-  std::vector<double> weights(subparticles->size(), 1.0);
-
-
-  // Retrieve oldest element of queue
-  auto lk = landmark_cache_.front();
-  landmark_cache_.pop();  // Observation in robot frame
-
-  for (auto& landmark: lk.measurements) {
-
-    std::array<double,2> landmark_global{map->landmarks[landmark.id].x,
-                                         map->landmarks[landmark.id].y};
-
-    //TODO Convert landmark position in robot frame (range,bearing) to global frame (x,y)
-    
-
-    for(auto& particle: *subparticles) {
-
-      // Robot position
-      std::array<double,2> robot_position{particle.x,
-                                          particle.y};
-
-      // TODO Calculate error in observation
-      std::array<double,2> error;
-
-      // Update weight for this particle
-      
-    }
-  }
-*/
+  return std::count_if(landmark_measurements_->measurements.begin(), landmark_measurements_->measurements.end(),[](const auto& m) {
+    return m.seen;
+  });
 }
+
+void Robot::clearLandmarkMeasurements()
+{
+  if (landmark_measurements_ != nullptr)
+  {
+    landmark_measurements_.reset();
+  }
+}
+
 
 } // namespace pfuclt::robot

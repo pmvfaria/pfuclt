@@ -99,8 +99,6 @@ class Robot {
    * new landmark data is received
    */
   void landmarkCallback(const clt_msgs::MeasurementArrayConstPtr&);
-  int landmarksUpdate(particle::WeightSubParticles & probabilities);
-
 
  public:
   Robot() = delete;
@@ -118,11 +116,18 @@ class Robot {
   Robot(const uint id, particle::RobotSubParticles* p_subparticles, const map::LandmarkMap* map);
 
   /**
+   * @brief Updates weights for each particle taking into account the landmark observations and their known positions
+   * @param probabilities vector of weights to be updated
+   * @return number of landmarks that are currently seen by this robot, or -1 if no landmark measurement was received
+   */
+  int landmarksUpdate(particle::WeightSubParticles & probabilities);
+
+  void clearLandmarkMeasurements();
+
+  /**
    * @brief Process all cached odometry messages, sampling the motion model for each particle
    */
-  void predict();
-
-  void update();
+  void motionModel();
   
   //TODO: Robot(std::string name);
 };
