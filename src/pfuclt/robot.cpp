@@ -88,7 +88,7 @@ int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
     {
       auto cov(landmark::uncertaintyModel(m));
 
-      std::for_each(subparticles->begin(), subparticles->end(), [this, idx=0, &m, &cov, &probabilities] (const auto &p) mutable -> void
+      std::for_each(subparticles->begin(), subparticles->end(), [this, p_idx=0, &m, &cov, &probabilities] (const auto &p) mutable -> void
       {
         // All to robot frame in cartesian coordinates
         double m_x {m.range * cos(m.bearing + p.theta)};
@@ -111,8 +111,8 @@ int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
         double numerator {exp(-1.0 * (num_length + num_angle))};
         double denominator {2.0 * M_PI * cov.dd * cov.pp};
 
-        probabilities[idx] = numerator / denominator;
-        ++idx;
+        probabilities[p_idx] = numerator / denominator;
+        ++p_idx;
       });
     }
   }

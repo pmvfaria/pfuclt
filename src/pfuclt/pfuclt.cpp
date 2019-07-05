@@ -84,15 +84,20 @@ void PFUCLT::predictTargets()
 
 void PFUCLT::fuseLandmarks()
 {
+  // Get probabilities of each particle for each robot separately
+  std::vector<std::size_t> landmarks_seen (num_robots);
   std::vector<particle::WeightSubParticles> probabilities(num_robots, particle::WeightSubParticles(num_particles));
-  this->foreach_robot([&probabilities, r=0] (auto &robot) mutable -> void {
-      auto landmarks_seen = robot->landmarksUpdate(probabilities[r]);
-      if (landmarks_seen > 0)
+  this->foreach_robot([&probabilities, &landmarks_seen] (auto &robot) -> void {
+      landmarks_seen[robot->idx] = robot->landmarksUpdate(probabilities[robot->idx]);
+      if (landmarks_seen[robot->idx] > 0)
       {
         robot->clearLandmarkMeasurements();
       }
     },
     __gnu_parallel::parallel_unbalanced);
+
+  // Fuse the landmark observation weights together for all robots
+
 }
 
 void PFUCLT::fuseTargets()
