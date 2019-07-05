@@ -89,7 +89,7 @@ int Robot::landmarksUpdate(particle::WeightSubParticles & probabilities) {
 
   for (const auto& measurement: landmark_measurements_->measurements)
   {
-    auto cov(std::move(landmark::uncertaintyModel(measurement)));
+    auto cov(landmark::uncertaintyModel(measurement));
     
   }
 
