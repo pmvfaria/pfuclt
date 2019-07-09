@@ -26,7 +26,7 @@ Particles::Particles(Particles &&other) noexcept :
   // Nothing to do
 }
 
-const bool Particles::normalize__impl(std::vector<double>& vec) const {
+bool Particles::normalize__impl(std::vector<double>& vec) const {
   const auto sum = std::accumulate(vec.begin(), vec.end(), 0.0);
   if (sum == 0.0) {
     return false;

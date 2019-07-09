@@ -57,14 +57,14 @@ class PFUCLT {
    * @details hardcoded /world/landmarks parameter is used
    * @return number of added landmarks
    */
-  const std::size_t getLandmarkMap();
+  std::size_t getLandmarkMap();
 
   /**
    * @brief Initialize particles using ROS parameter server params
    * @remark If the parameters are not found, initializes particles randomly
    * @return true if particles initialized with parameters, false otherwise
    */
-  const bool initializeParticles();
+  bool initializeParticles();
 
   /**
    * @brief Apply function f to every Robot
@@ -85,6 +85,7 @@ class PFUCLT {
   PFUCLT& operator=(PFUCLT &&) = delete; // no move assign
 
   uint self_robot_id;
+  int num_particles{0}, num_robots{0}, num_targets{0}, num_landmarks{0};
 
   /**
    * @brief Main constructor of PFUCLT
@@ -92,8 +93,10 @@ class PFUCLT {
    */
   explicit PFUCLT(const uint self_robot_id);
 
-  void predict();
-  void update();
+  void predictRobots();
+  void predictTargets();
+  void fuseLandmarks();
+  void fuseTargets();
 
  public:
   void run();

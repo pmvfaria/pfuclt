@@ -10,9 +10,7 @@
 
 #include <random>
 #include <queue>
-#include <mutex>
 #include <cmath>
-#include <Eigen/Dense>
 
 #include <clt_msgs/CustomOdometry.h>
 
@@ -57,7 +55,6 @@ class Robot {
   // subscriber and queue to take odometry messages
   ros::Subscriber odometry_sub_;
   std::queue<odometry::OdometryMeasurement> odometry_cache_;
-  std::mutex odometry_mutex_;
 
   // subscriber and queue to take target messages
   ros::Subscriber target_sub_;
@@ -65,19 +62,17 @@ class Robot {
 
   // subscriber and queue to take landmark messages
   ros::Subscriber landmark_sub_;
-  std::queue<landmark::LandmarkMeasurements> landmark_cache_;
+  std::unique_ptr<landmark::LandmarkMeasurements> landmark_measurements_;
 
  public:
   // pointer to this robot's sub-particles
   particle::RobotSubParticles *subparticles;
-  std::mutex subparticles_mutex_;
 
   // pointer to landmark map
   const map::LandmarkMap *map;
 
-
  private:
-  void getAlphas();
+  void initialize();
   
   /**
    * @brief Event-driven function that should be called when
@@ -90,7 +85,7 @@ class Robot {
    * @details Odometry retrieved in method odometryCallback is used
    * to calculate the new particle state.
    */
-  void processOldestOdometry();
+  void processOdometryMeasurement(const odometry::OdometryMeasurement&);
 
   /**
    * @brief Event-driven function that should be called when
@@ -104,8 +99,6 @@ class Robot {
    * new landmark data is received
    */
   void landmarkCallback(const clt_msgs::MeasurementArrayConstPtr&);
-  void processLandmarkMeasurement();
-
 
  public:
   Robot() = delete;
@@ -123,11 +116,18 @@ class Robot {
   Robot(const uint id, particle::RobotSubParticles* p_subparticles, const map::LandmarkMap* map);
 
   /**
+   * @brief Updates weights for each particle taking into account the landmark observations and their known positions
+   * @param probabilities vector of weights to be updated
+   * @return number of landmarks that are currently seen by this robot, or -1 if no landmark measurement was received
+   */
+  int landmarksUpdate(particle::WeightSubParticles & probabilities);
+
+  void clearLandmarkMeasurements();
+
+  /**
    * @brief Process all cached odometry messages, sampling the motion model for each particle
    */
-  void predict();
-
-  void update();
+  void motionModel();
   
   //TODO: Robot(std::string name);
 };
