@@ -3,7 +3,9 @@
 //
 
 #include <future>
-#include <parallel/algorithm>
+#include <parallel/algorithm> // parallel for_each
+#include <numeric> // iota
+#include <algorithm> // sort
 
 #include "pfuclt.hpp"
 #include <boost/thread.hpp>
@@ -30,6 +32,9 @@ PFUCLT::PFUCLT(const uint self_robot_id)
 
   ROS_INFO_STREAM("Added " << num_landmarks << " landmarks");
   ROS_INFO_STREAM(*map_);
+
+  // Initialize per-robot per-particle persistent weight components
+  weight_components_.assign(num_robots, particle::WeightSubParticles(num_particles, 1.0));
 
   // Create and initialize particles
   particles_ = std::make_unique<::pfuclt::particle::Particles>(num_particles, num_robots, num_targets);
@@ -84,20 +89,49 @@ void PFUCLT::predictTargets()
 
 void PFUCLT::fuseLandmarks()
 {
-  // Get probabilities of each particle for each robot separately
-  std::vector<std::size_t> landmarks_seen (num_robots);
-  std::vector<particle::WeightSubParticles> probabilities(num_robots, particle::WeightSubParticles(num_particles));
-  this->foreach_robot([&probabilities, &landmarks_seen] (auto &robot) -> void {
-      landmarks_seen[robot->idx] = robot->landmarksUpdate(probabilities[robot->idx]);
-      if (landmarks_seen[robot->idx] > 0)
+  /**
+   * Per-robot weight components are persistent accross iterations
+   * In case a robot does not see any landmark, its weight component is kept
+   * TODO is this a good approach? See http://dante.isr.tecnico.ulisboa.pt/pf_coop_perception/pfuclt/issues/7
+   */
+
+  this->foreach_robot([this] (auto &robot) -> void {
+      auto& robot_weights = this->weight_components_[robot->idx];
+      auto landmarks_seen = robot->landmarksUpdate(robot_weights);
+      if (landmarks_seen > 0)
       {
         robot->clearLandmarkMeasurements();
+
+        // Get sorted weights indices
+        std::vector<size_t> idx(robot_weights.size());
+        std::iota(idx.begin(), idx.end(), 0);
+        std::sort(idx.begin(), idx.end(),
+          [&robot_weights](auto i1, auto i2) {return robot_weights[i1] < robot_weights[i2];});
+
+        // Sorting according to indices is O(n) using a O(n) copy of the subparticles, same for weights
+        auto& robot_subparticles = *robot->subparticles;
+        const auto weights_copy = robot_weights;
+        const auto subparticles_copy = robot_subparticles;
+        for (std::size_t p{0}, sz{weights_copy.size()}; p<sz; ++p)
+        {
+          robot_subparticles[p] = subparticles_copy[idx[p]];
+          robot_weights[p] = weights_copy[idx[p]];
+        }
       }
     },
     __gnu_parallel::parallel_unbalanced);
 
-  // Fuse the landmark observation weights together for all robots
 
+  // accumulate does not work as our map is robot -> particle weights and not the inverse
+  // O(NM)
+  for (auto p{0}; p<num_particles; ++p)
+  {
+    particles_->weights[p] = 1.0;
+    for (auto r{0}; r<num_robots; ++r)
+    {
+      particles_->weights[r] *= weight_components_[r][p];
+    }
+  }
 }
 
 void PFUCLT::fuseTargets()

@@ -45,6 +45,8 @@ class PFUCLT {
 
   ros::Rate rate_;
 
+  std::vector<particle::WeightSubParticles> weight_components_;
+
   // async spinner to allow multi-threading with other robots
   std::unique_ptr<ros::AsyncSpinner> robot_spinner_;
 
