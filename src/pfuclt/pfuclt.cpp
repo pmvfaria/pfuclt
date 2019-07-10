@@ -15,7 +15,7 @@
 namespace pfuclt::algorithm {
 
 PFUCLT::PFUCLT(const uint self_robot_id)
-  : rate_(50), pool_(1), self_robot_id(self_robot_id) {
+  : rate_(50), self_robot_id(self_robot_id) {
 
   // Get important parameters
   ROS_ASSERT_MSG(pnh_.getParam("particles", num_particles), "Parameter num_particles is required");
@@ -50,14 +50,18 @@ PFUCLT::PFUCLT(const uint self_robot_id)
   // This spinner will help multi-thread robot odometry processing, which is independent of other robots
   robot_spinner_ = std::make_unique<ros::AsyncSpinner>(num_robots);
 
-  pool_.resize(num_robots);
-
   // Create robots
   robots_.reserve((size_t)num_robots);
   for (uint r = 0; r < (uint) num_robots; ++r) {
     robots_.emplace_back(std::make_unique<::pfuclt::robot::Robot>(r, &particles_->robots[r], map_.get()));
     ROS_INFO_STREAM("Robot created with index " << robots_[r]->idx << " and name " << robots_[r]->name);
   }
+
+  // Create state
+  state_ = std::make_unique<::pfuclt::state::State>(num_robots, num_targets);
+
+  // Create publisher class
+  publisher_ = std::make_unique<::pfuclt::publisher::PFUCLTPublisher>(this);
 }
 
 void PFUCLT::foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) {
@@ -129,7 +133,7 @@ void PFUCLT::fuseLandmarks()
     particles_->weights[p] = 1.0;
     for (auto r{0}; r<num_robots; ++r)
     {
-      particles_->weights[r] *= weight_components_[r][p];
+      particles_->weights[p] *= weight_components_[r][p];
     }
   }
 }

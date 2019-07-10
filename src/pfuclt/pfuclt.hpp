@@ -13,35 +13,38 @@
 #include "../map/map_ros.hpp"
 #include "robot.hpp"
 #include "target.hpp"
-
+#include "state.hpp" 
 
 //#include "../sensor/odometry_data.hpp"
 
 #include "../sensor/landmark_data.hpp"
 
-#include "../thirdparty/CTPL/ctpl_stl.h"
+
+namespace pfuclt::publisher{
+    class PFUCLTPublisher;
+}
 
 namespace pfuclt::algorithm {
 
 // Alias to the optional use of parallelization from __gnu_parallel
 using optional_parallel = std::optional<const __gnu_parallel::_Parallelism>;
 
-
 /**
   * @brief The Particle filter class - main class of the particle filter algorithm.
   * Creates and initializes the particle filter
   */
 class PFUCLT {
- protected:
+ private:
   ros::NodeHandle nh_{""};
   ros::NodeHandle pnh_{"~"};
-
-  //int num_robots_;
 
   std::vector<std::unique_ptr<::pfuclt::robot::Robot>> robots_;
   std::vector<std::unique_ptr<::pfuclt::target::Target>> targets_;
   std::unique_ptr<::pfuclt::map::LandmarkMap> map_;
   std::unique_ptr<::pfuclt::particle::Particles> particles_;
+  std::unique_ptr<::pfuclt::state::State> state_;
+
+  std::unique_ptr<::pfuclt::publisher::PFUCLTPublisher> publisher_;
 
   ros::Rate rate_;
 
@@ -50,8 +53,8 @@ class PFUCLT {
   // async spinner to allow multi-threading with other robots
   std::unique_ptr<ros::AsyncSpinner> robot_spinner_;
 
-  // thread pool to parallelize robot methods
-  ctpl::thread_pool pool_;
+  // Publisher class has to be able to access PFUCLT data
+  friend class pfuclt::publisher::PFUCLTPublisher;
 
  private:
   /**
@@ -85,7 +88,7 @@ class PFUCLT {
   PFUCLT(PFUCLT &&) = delete; // no move
   PFUCLT& operator=(const PFUCLT &) = delete; // no copy assign
   PFUCLT& operator=(PFUCLT &&) = delete; // no move assign
-
+  
   uint self_robot_id;
   int num_particles{0}, num_robots{0}, num_targets{0}, num_landmarks{0};
 
@@ -93,14 +96,14 @@ class PFUCLT {
    * @brief Main constructor of PFUCLT
    * @param self_robot_id The robot that the algorithm will run on
    */
-  explicit PFUCLT(const uint self_robot_id);
+  PFUCLT(const uint self_robot_id);
+
 
   void predictRobots();
   void predictTargets();
   void fuseLandmarks();
   void fuseTargets();
 
- public:
   void run();
 
 };
