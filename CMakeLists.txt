@@ -5,8 +5,10 @@ project(pfuclt)
 message(AUTHOR_WARNING "Rember to change to Release and add -O3 optimizations to compiler")
 
 option(PFUCLT_SIMD_OPTIMIZATIONS "Enable CPU-specific SIMD optimizations (SSE/AVX or NEON, e.g.)" ON)
+option(PFUCLT_VECTORIZE_DEBUG "Enable options to help in spotting missed vectorization in loops" OFF)
 option(ENABLE_AES "Enable AES optimizations (enabled by default with PFUCLT_SIMD_OPTIMIZATIONS, set OFF to disable" ON)
 option(ENABLE_AVX2 "Enable AVX2 optimizations" ON)
+
 
 # Debug until ready for release
 set(CMAKE_BUILD_TYPE Release)
@@ -27,6 +29,11 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 else()
     message(WARN "Unknown compiler, please use GNU g++")
 endif ()
+
+if(PFUCLT_VECTORIZE_DEBUG)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopt-info-vec-optimized -fopt-info-vec-missed")
+endif()
+
 
 # OpenMP needed for parallel STL
 # One could add the -D_GLIBCXX_PARALLEL flag, but that turns all sequential STL algorithms into parallel (if available)

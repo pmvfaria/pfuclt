@@ -129,7 +129,7 @@ void PFUCLT::fuseLandmarks()
     particles_->weights[p] = 1.0;
     for (auto r{0}; r<num_robots; ++r)
     {
-      particles_->weights[r] *= weight_components_[r][p];
+      particles_->weights[p] *= weight_components_[r][p];
     }
   }
 }
