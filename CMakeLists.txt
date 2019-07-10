@@ -4,10 +4,12 @@ project(pfuclt)
 # Warn to add optimizations, remove when done
 message(AUTHOR_WARNING "Rember to change to Release and add -O3 optimizations to compiler")
 
+option(PFUCLT_SIMD_OPTIMIZATIONS "Enable CPU-specific SIMD optimizations (SSE/AVX or NEON, e.g.)" ON)
+option(ENABLE_AES "Enable AES optimizations (enabled by default with PFUCLT_SIMD_OPTIMIZATIONS, set OFF to disable" ON)
+option(ENABLE_AVX2 "Enable AVX2 optimizations" ON)
+
 # Debug until ready for release
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
-endif ()
+set(CMAKE_BUILD_TYPE Release)
 message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 
 # OpenMP needed for parallel STL
@@ -42,6 +44,28 @@ endif ()
 
 # All warnings, add optimizations later
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+# SIMD optimization
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86(_64)?)$")
+    if (PFUCLT_SIMD_OPTIMIZATIONS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
+        if (ENABLE_AES)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maes")
+        endif ()
+    elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
+    endif()
+
+    if (ENABLE_AVX2)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mbmi -mbmi2 -maes")
+        if (PERMUTE_WITH_GATHER)
+            add_definitions(-DPERMUTE_WITH_GATHER)
+        elseif (PERMUTE_WITH_SHUFFLES)
+            add_definitions(-DPERMUTE_WITH_SHUFFLES)
+        endif()
+    endif()
+endif()
+
 
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})

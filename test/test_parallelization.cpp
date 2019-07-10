@@ -81,7 +81,7 @@ void timeResize() {
   std::cout << "RESIZE (x" << i << ") Parallel - took " << watch.ElapsedMs() << " ms" << std::endl;
 }
 
-int main(int argc, char **argv) {
+int main() {
 
   warmUp();
   timeNormalizeWeights();
