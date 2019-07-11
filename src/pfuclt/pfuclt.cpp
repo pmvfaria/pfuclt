@@ -61,7 +61,7 @@ PFUCLT::PFUCLT(const uint self_robot_id)
   state_ = std::make_unique<::pfuclt::state::State>(num_robots, num_targets);
 
   // Create publisher class
-  publisher_ = std::make_unique<::pfuclt::publisher::PFUCLTPublisher>(this);
+  publisher_ = std::make_unique<::pfuclt::publisher::PFUCLTPublisher>(*this);
 }
 
 void PFUCLT::foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) {
