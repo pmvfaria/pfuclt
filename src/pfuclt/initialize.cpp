@@ -89,7 +89,7 @@ bool PFUCLT::initializeParticles() {
   }
 }
 
-}// namespace algorithm
+} // namespace algorithm
 
 namespace robot{
 
@@ -100,8 +100,8 @@ void Robot::initialize() {
   const auto &alphas_param = this->name;
 
   XmlRpcValue init_alphas;
-  anh.getParam(alphas_param, init_alphas);
-
+  std::ostringstream oss;
+  ROS_ASSERT_MSG(anh.getParam(alphas_param, init_alphas), "Parameter %s is required", alphas_param.c_str());
   ROS_ASSERT_MSG(init_alphas.getType() == XmlRpcValue::TypeArray && (size_t)init_alphas.size() == alphas_.size(),
                  "Expected %s as a list with %d values", anh.resolveName(alphas_param).c_str(), (int)alphas_.size());
 
@@ -110,6 +110,20 @@ void Robot::initialize() {
   }
 }
 
+} // namespace robot
+
+namespace target{
+
+void Target::initialize() {
+
+  ros::NodeHandle gnh{"/target_model"};
+
+  ROS_ASSERT_MSG(gnh.getParam("mean", motion_mean), "Parameter mean is required");
+  ROS_ASSERT_MSG(gnh.getParam("mean", motion_stddev), "Parameter mean is required");
+
+  last_motion = ros::Time::now();
 }
+
+} // namespace target
 
 } // namespace pfuclt

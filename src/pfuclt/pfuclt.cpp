@@ -62,6 +62,13 @@ PFUCLT::PFUCLT(const uint self_robot_id)
 
   // Create publisher class
   publisher_ = std::make_unique<::pfuclt::publisher::PFUCLTPublisher>(*this);
+
+  // Create targets
+  targets_.reserve((size_t)num_targets);
+  for (uint t = 0; t < (uint) num_targets; ++t) {
+    targets_.emplace_back(std::make_unique<::pfuclt::target::Target>(t, &particles_->targets[t]));
+    ROS_INFO_STREAM("Target created with index " << targets_[t]->idx);
+  }
 }
 
 void PFUCLT::foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) {

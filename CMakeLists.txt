@@ -11,7 +11,8 @@ option(ENABLE_AVX2 "Enable AVX2 optimizations" ON)
 
 
 # Debug until ready for release
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
+set(PFUCLT_VECTORIZE_DEBUG OFF)
 message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 
 # C++ 17, GNU 8.1
@@ -121,7 +122,7 @@ add_executable(pfuclt_node src/ros/pfuclt_node.cpp src/ros/pfuclt_publisher.hpp 
         src/sensor/odometry_data.cpp src/particle/particles.cpp src/particle/particles.hpp
         src/map/landmark_map.cpp src/map/landmark_map.hpp src/map/map_ros.cpp src/map/map_ros.hpp
         src/sensor/landmark_data.cpp src/pfuclt/pfuclt.cpp src/pfuclt/pfuclt.hpp
-        src/pfuclt/initialize.cpp src/pfuclt/state.cpp src/pfuclt/state.hpp src/pfuclt/robot.cpp src/pfuclt/robot.hpp
+        src/pfuclt/initialize.cpp src/pfuclt/state.cpp src/pfuclt/state.hpp src/pfuclt/robot.cpp src/pfuclt/robot.hpp src/pfuclt/target.cpp src/pfuclt/target.hpp
         src/thirdparty/stopwatch/StopWatch.cpp
         src/thirdparty/CTPL/ctpl_stl.h)
 target_link_libraries(pfuclt_node ${catkin_LIBRARIES})

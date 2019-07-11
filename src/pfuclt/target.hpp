@@ -35,13 +35,22 @@ class Target {
   // pointer to this target's sub-particles
   particle::TargetSubParticles *subparticles;
 
+  double motion_mean;
+  double motion_stddev;
+
  private:
   std::random_device rd_{};
   generator_type generator_;
 
   static constexpr auto name_prefix_ = "target";
 
+  ros::Time last_motion;
+
   void processTargetModel();
+
+  void initialize();
+
+  void motionModel();
 
  public:
   Target() = delete;
