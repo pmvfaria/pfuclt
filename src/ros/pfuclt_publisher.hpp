@@ -11,7 +11,17 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Point32.h>
+#include <sensor_msgs/PointCloud.h>
 #include <clt_msgs/Estimate.h>
+#include <clt_msgs/Particles.h>
+#include <clt_msgs/SubParticles.h>
+#include <clt_msgs/SubParticle.h>
+#include <clt_msgs/GroundTruth.h>
+
+namespace pfuclt::algorithm{
+    class PFUCLT;
+}
 
 namespace pfuclt::publisher {
 
@@ -29,7 +39,7 @@ public:
     PFUCLTPublisher(::pfuclt::algorithm::PFUCLT& pfuclt);
 
 private:
-    std::unique_ptr<::pfuclt::algorithm::PFUCLT> pfuclt_;
+    ::pfuclt::algorithm::PFUCLT* pfuclt_;
 
     ros::Subscriber groundTruthSubscriber_;
 
@@ -50,13 +60,12 @@ private:
     std::vector<ros::Publisher> robotEstimatedPosePublisher_;
     std::vector<ros::Publisher> robotGtPosePublisher_;
     std::vector<ros::Publisher> robotParticlesPublisher_;
-    // 
+    // Broadcaster
     std::vector<tf2_ros::TransformBroadcaster> robotBroadcaster_;
 
     // Messages
     clt_msgs::Estimate estimate_;
     clt_msgs::Particles particles_;
-
 
     void publishParticles();
 
