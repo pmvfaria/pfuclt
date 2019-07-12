@@ -79,7 +79,10 @@ class PFUCLT {
                       const optional_parallel& tag = std::nullopt);
   void foreach_robot(std::function<void(const std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, 
                       const optional_parallel& tag = std::nullopt) const;
-
+  void foreach_target(std::function<void(std::unique_ptr<::pfuclt::target::Target>&)> const& f,
+                      const optional_parallel& tag = std::nullopt);
+  void foreach_target(std::function<void(const std::unique_ptr<::pfuclt::target::Target>&)> const& f,
+                      const optional_parallel& tag = std::nullopt) const;
 
  public:
   PFUCLT() = delete;

@@ -65,7 +65,7 @@ void Robot::motionModel() {
 }
 
 void Robot::targetCallback(const clt_msgs::MeasurementArrayConstPtr& msg) {
-  //target_measurements_ = std::move(target_data::fromRosMsg(msg));
+  target_measurements_ = target_data::fromRosMsg(msg);
 }
 
 void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {

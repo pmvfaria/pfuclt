@@ -39,11 +39,7 @@ class Target {
 
   ros::Time last_motion;
 
-  void processTargetModel();
-
   void initialize();
-
-  void motionModel();
 
  public:
   // pointer to this target's sub-particles
@@ -62,6 +58,7 @@ class Target {
    */
   Target(uint id, particle::TargetSubParticles* p_subparticles);
 
+  void motionModel();
 };
 
 } // namespace pfuclt::target
