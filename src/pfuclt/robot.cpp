@@ -69,7 +69,7 @@ void Robot::targetCallback(const clt_msgs::MeasurementArrayConstPtr& msg) {
 }
 
 void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
-  landmark_measurements_ = std::move(landmark::fromRosMsg(msg));
+  landmark_measurements_ = landmark::fromRosMsg(msg);
 }
 
 int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
