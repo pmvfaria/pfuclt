@@ -219,14 +219,12 @@ void PFUCLTPublisher::publishTargetsObservations() {
 
     for (auto& robot : pfuclt_->robots_) {
 
+        std::vector<sensor::target_data::TargetMeasurement> measurements = robot->convertMeasurements(); //x,y
+
         visualization_msgs::Marker marker;
 
         marker.header.stamp = robot->lastestMeasurementTime;
         marker.header.frame_id = robot->name;
-        
-        // Setting the same namespace and id will overwrite the previous marker
-        marker.ns = robot->name + "TargetObservations";
-        marker.id = 0;
 
         marker.type = visualization_msgs::Marker::ARROW;
         marker.action = visualization_msgs::Marker::ADD;
@@ -238,30 +236,35 @@ void PFUCLTPublisher::publishTargetsObservations() {
         marker.points.push_back(tail);
         // Point at index 1 - head - is the target pose in the local frame
         geometry_msgs::Point head;
-        /*
-        head.x = obs.x;
-        head.y = obs.y;
-        head.z = obs.z;
-        marker.points.push_back(head);
+        
+        for (auto& target : pfuclt_->targets_) {
+            // Setting the same namespace and id will overwrite the previous marker
+            marker.ns = robot->name + "/" + target->name;
+            marker.id = 0;
+        
+            head.x = measurements[target->idx];
+            head.y = measurements[target->idx];
+            head.z = measurements[target->idx];
+            marker.points.push_back(head);
 
-        marker.scale.x = 0.01;
-        marker.scale.y = 0.03;
-        marker.scale.z = 0.05;
+            marker.scale.x = 0.01;
+            marker.scale.y = 0.03;
+            marker.scale.z = 0.05;
 
-        // Colour
-        marker.color.a = 1;
-        if (obs.found)
-            marker.color.r = marker.color.g = marker.color.b = 0.6;
-        else {
-            marker.color.r = 1.0;
-            marker.color.g = marker.color.b = 0.0;
+            // Colour
+            marker.color.a = 1;
+            if (measurements[target->idx].seen)
+                marker.color.r = marker.color.g = marker.color.b = 0.6;
+            else {
+                marker.color.r = 1.0;
+                marker.color.g = marker.color.b = 0.0;
+            }
+
+            // Delete marker after 2 seconds
+            marker.lifetime = ros::Duration(2);
+
+            targetObservationsPublisher_[target->idx].publish(marker);
         }
-
-        // Delete marker after 2 seconds
-        marker.lifetime = ros::Duration(2);
-
-        targetObservationsPublisher_.publish(marker);
-        */
     }
 }
 

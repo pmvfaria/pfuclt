@@ -53,7 +53,7 @@ class Robot {
   // subscriber and queue to take odometry messages
   ros::Subscriber odometry_sub_;
   std::queue<odometry::OdometryMeasurement> odometry_cache_;
-
+public:
   // subscriber and pointer to target measurements
   ros::Subscriber target_sub_;
   std::unique_ptr<target_data::TargetMeasurements> target_measurements_;
@@ -62,7 +62,7 @@ class Robot {
   ros::Subscriber landmark_sub_;
   std::unique_ptr<landmark::LandmarkMeasurements> landmark_measurements_;
 
- public:
+ //public:
   // pointer to this robot's sub-particles
   particle::RobotSubParticles *subparticles;
 
