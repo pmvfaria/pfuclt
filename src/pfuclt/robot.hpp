@@ -12,8 +12,6 @@
 #include <queue>
 #include <cmath>
 
-#include <clt_msgs/CustomOdometry.h>
-
 #include "../particle/particles.hpp"
 #include "../map/landmark_map.hpp"
 #include "../sensor/odometry_data.hpp"
@@ -56,11 +54,11 @@ class Robot {
   ros::Subscriber odometry_sub_;
   std::queue<odometry::OdometryMeasurement> odometry_cache_;
 
-  // subscriber and queue to take target messages
+  // subscriber and pointer to target measurements
   ros::Subscriber target_sub_;
-  std::queue<target_data::TargetMeasurement> target_cache_;
+  std::unique_ptr<target_data::TargetMeasurements> target_measurements_;
 
-  // subscriber and queue to take landmark messages
+  // subscriber and pointer to landmark measurements
   ros::Subscriber landmark_sub_;
   std::unique_ptr<landmark::LandmarkMeasurements> landmark_measurements_;
 
@@ -70,6 +68,8 @@ class Robot {
 
   // pointer to landmark map
   const map::LandmarkMap *map;
+
+  ros::Time lastestMeasurementTime;
 
  private:
   void initialize();
@@ -91,7 +91,7 @@ class Robot {
    * @brief Event-driven function that should be called when
    * new target data is received
    */
-  void targetCallback(const clt_msgs::MeasurementStampedConstPtr&);
+  void targetCallback(const clt_msgs::MeasurementArrayConstPtr&);
   void processTargetMeasurement();
 
   /**

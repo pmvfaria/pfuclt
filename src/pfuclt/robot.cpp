@@ -64,8 +64,8 @@ void Robot::motionModel() {
   }
 }
 
-void Robot::targetCallback(const clt_msgs::MeasurementStampedConstPtr& msg) {
-  //target_cache_.emplace(target_data::fromRosMsg(msg));
+void Robot::targetCallback(const clt_msgs::MeasurementArrayConstPtr& msg) {
+  //target_measurements_ = std::move(target_data::fromRosMsg(msg));
 }
 
 void Robot::processTargetMeasurement() {
@@ -86,6 +86,9 @@ int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
   {
     if (m.seen)
     {
+      // Save measurement time
+      lastestMeasurementTime = landmark_measurements_->stamp;
+
       auto cov(landmark::uncertaintyModel(m));
 
       size_t p_idx {0};
