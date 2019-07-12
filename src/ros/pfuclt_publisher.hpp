@@ -50,8 +50,8 @@ private:
     // Rviz visualization publishers
 
     // Target
-    std::vector<ros::Publisher> targetEstimatedPosePublisher_;
-    std::vector<ros::Publisher> targetGtPosePublisher_;
+    std::vector<ros::Publisher> targetEstimatedPointPublisher_;
+    std::vector<ros::Publisher> targetGtPointPublisher_;
     std::vector<ros::Publisher> targetParticlesPublisher_;
     // Target observations publisher
     std::vector<ros::Publisher> targetObservationsPublisher_;
