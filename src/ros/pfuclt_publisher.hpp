@@ -75,7 +75,7 @@ private:
 
     void publishEstimate();
 
-    void publishTargetObsrvations();
+    void publishTargetsObservations();
 
     void groundTruthCallback(const clt_msgs::GroundTruth::ConstPtr&);
 };

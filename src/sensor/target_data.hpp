@@ -3,6 +3,7 @@
 #ifndef PFUCLT_TARGET_DATA_HPP
 #define PFUCLT_TARGET_DATA_HPP
 
+#include <memory>
 #include <vector>
 #include <ros/ros.h>
 #include <clt_msgs/MeasurementArray.h>

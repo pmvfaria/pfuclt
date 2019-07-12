@@ -92,7 +92,6 @@ class Robot {
    * new target data is received
    */
   void targetCallback(const clt_msgs::MeasurementArrayConstPtr&);
-  void processTargetMeasurement();
 
   /**
    * @brief Event-driven function which should be called when
@@ -123,6 +122,9 @@ class Robot {
   int landmarksUpdate(particle::WeightSubParticles & probabilities);
 
   void clearLandmarkMeasurements();
+
+
+  int targetsUpdate();
 
   /**
    * @brief Process all cached odometry messages, sampling the motion model for each particle

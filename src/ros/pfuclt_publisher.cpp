@@ -215,7 +215,7 @@ void PFUCLTPublisher::publishEstimate() {
     estimatePublisher_.publish(estimate_);
 }
 
-void PFUCLTPublisher::publishTargetObsrvations() {
+void PFUCLTPublisher::publishTargetsObservations() {
 
     for (auto& robot : pfuclt_->robots_) {
 
@@ -239,10 +239,10 @@ void PFUCLTPublisher::publishTargetObsrvations() {
         // Point at index 1 - head - is the target pose in the local frame
         geometry_msgs::Point head;
         /*
-        //head.x = obs.x;
-        //head.y = obs.y;
-        //head.z = obs.z;
-        //marker.points.push_back(head);
+        head.x = obs.x;
+        head.y = obs.y;
+        head.z = obs.z;
+        marker.points.push_back(head);
 
         marker.scale.x = 0.01;
         marker.scale.y = 0.03;
@@ -260,7 +260,8 @@ void PFUCLTPublisher::publishTargetObsrvations() {
         // Delete marker after 2 seconds
         marker.lifetime = ros::Duration(2);
 
-        targetObservationsPublisher_.publish(marker);*/
+        targetObservationsPublisher_.publish(marker);
+        */
     }
 }
 
