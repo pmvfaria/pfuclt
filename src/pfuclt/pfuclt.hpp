@@ -13,11 +13,10 @@
 #include "../map/map_ros.hpp"
 #include "robot.hpp"
 #include "target.hpp"
-#include "state.hpp" 
-
+#include "state.hpp"
 //#include "../sensor/odometry_data.hpp"
-
 #include "../sensor/landmark_data.hpp"
+#include "../ros/pfuclt_publisher.hpp"
 
 
 namespace pfuclt::publisher{
