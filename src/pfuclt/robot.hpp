@@ -73,7 +73,7 @@ class Robot {
 
  private:
   void initialize();
-  
+
   /**
    * @brief Event-driven function that should be called when
    * new odometry data is received
@@ -86,6 +86,11 @@ class Robot {
    * to calculate the new particle state.
    */
   void processOdometryMeasurement(const odometry::OdometryMeasurement&);
+
+  /**
+   * @brief Updates probabilities by particle given a landmark measurement
+   */
+  void processLandmarkMeasurement(const landmark::LandmarkMeasurement&, particle::WeightSubParticles &);
 
   /**
    * @brief Event-driven function that should be called when
@@ -115,7 +120,7 @@ class Robot {
   Robot(const uint id, particle::RobotSubParticles* p_subparticles, const map::LandmarkMap* map);
 
   /**
-   * @brief Updates weights for each particle taking into account the landmark observations and their known positions
+   * @brief Updates probabilities for each particle taking into account the landmark observations and their known positions
    * @param probabilities vector of weights to be updated
    * @return number of landmarks that are currently seen by this robot, or -1 if no landmark measurement was received
    */
@@ -130,7 +135,7 @@ class Robot {
    * @brief Process all cached odometry messages, sampling the motion model for each particle
    */
   void motionModel();
-  
+
   //TODO: Robot(std::string name);
 };
 
