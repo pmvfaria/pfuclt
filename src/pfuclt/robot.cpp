@@ -31,7 +31,7 @@ void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
   landmark_measurements_ = landmark::fromRosMsg(msg);
 }
 
-void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom) {
+void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom){
   // Robot motion model (from Probabilistic Robotics book)
   std::normal_distribution<double>
       rot1_rand(
@@ -76,18 +76,14 @@ void Robot::processLandmarkMeasurement(const landmark::LandmarkMeasurement& m, p
     for (auto& p: *subparticles)
     {
       // All to robot frame in cartesian coordinates
-      double m_x {m.range * cos(m.bearing + p.theta)};
-      double m_y {m.range * sin(m.bearing + p.theta)};
       double lm_local_x {map->landmarks[m.id].x - p.x};
       double lm_local_y {map->landmarks[m.id].y - p.y};
 
-      double m_length {sqrt(m_x * m_x + m_y * m_y)};
-      double m_angle {atan2(m_y, m_x)};
       double lm_length {sqrt(lm_local_x * lm_local_x + lm_local_y * lm_local_y)};
       double lm_angle {atan2(lm_local_y, lm_local_x)};
 
-      double z_length {m_length - lm_length};
-      double z_angle {m_angle - lm_angle};
+      double z_length {m.range - lm_length};
+      double z_angle {m.bearing - lm_angle};
 
       //TODO confirm model
       // Bivariate Gaussian
