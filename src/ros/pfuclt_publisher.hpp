@@ -26,8 +26,8 @@ namespace pfuclt::algorithm{
 namespace pfuclt::publisher {
 
 /**
- * @brief The publisher class - implents the ROS publishers necessary to the particle
- * filter class (PFUCLT)
+ * @brief The publisher class - implents the ROS publishers necessary to the
+ * particle filter class (PFUCLT)
  */
 class PFUCLTPublisher {
 
@@ -66,17 +66,48 @@ private:
     // Messages
     clt_msgs::Estimate estimate_;
     clt_msgs::Particles particles_;
+    clt_msgs::GroundTruth groundTruth_;
 
+    /**
+     * @brief Build and publish message particles_ with all the robot, target and 
+     * weight subparticles. A series of PoseArray and PointCloud messages for each
+     * robot and target, respectively, are also published.
+     */
     void publishParticles();
 
+    /**
+     * @brief Build message estimate_ for each robot with its estimated pose and
+     * with which targets are visible. Publish the robot pose. The broadcast of
+     * the robots coordinate frames to TF2 is also done.
+     */
     void publishRobot();
 
+    /**
+     * @brief Build message estimate_ for each target with its estimated point
+     * coordinates and with if it was seen by any robot. Publish the target point
+     * coordinates.
+     */
     void publishTarget();
 
+    /**
+     * @brief Publish the estimate message, estimate_, partially built in publishRobot
+     * and publishTarget.
+     */
     void publishEstimate();
 
+    /**
+     * @brief
+     */
+    void publishGt();
+
+    /**
+     * @brief Publish targets in rviz
+     */
     void publishTargetsObservations();
 
+    /**
+     * @brief Function called when subscribing to ground truth data.
+     */
     void groundTruthCallback(const clt_msgs::GroundTruth::ConstPtr&);
 };
 
