@@ -23,7 +23,15 @@ void Robot::odometryCallback(const clt_msgs::CustomOdometryConstPtr &msg) {
   odometry_cache_.emplace(odometry::fromRosCustomMsg(msg));
 }
 
-void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom) {
+void Robot::targetCallback(const clt_msgs::MeasurementArrayConstPtr& msg) {
+  target_measurements_ = target_data::fromRosMsg(msg);
+}
+
+void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
+  landmark_measurements_ = landmark::fromRosMsg(msg);
+}
+
+void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom){
   // Robot motion model (from Probabilistic Robotics book)
   std::normal_distribution<double>
       rot1_rand(
@@ -54,6 +62,42 @@ void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom
   }
 }
 
+void Robot::processLandmarkMeasurement(const landmark::LandmarkMeasurement& m, particle::WeightSubParticles & probabilities)
+{
+  if (m.seen)
+  {
+    // TODO this seems to be used for publishing ROS messages, find a better way
+    // Save measurement time
+    lastestMeasurementTime = landmark_measurements_->stamp;
+
+    auto cov(landmark::uncertaintyModel(m));
+
+    size_t p_idx {0};
+    for (auto& p: *subparticles)
+    {
+      // All to robot frame in cartesian coordinates
+      double lm_local_x {map->landmarks[m.id].x - p.x};
+      double lm_local_y {map->landmarks[m.id].y - p.y};
+
+      double lm_length {sqrt(lm_local_x * lm_local_x + lm_local_y * lm_local_y)};
+      double lm_angle {atan2(lm_local_y, lm_local_x)};
+
+      double z_length {m.range - lm_length};
+      double z_angle {m.bearing - lm_angle};
+
+      //TODO confirm model
+      // Bivariate Gaussian
+      double num_length {z_length * z_length / (2.0 * cov.dd * cov.dd)};
+      double num_angle {z_angle * z_angle / (2.0 * cov.pp * cov.pp)};
+      double numerator {exp(-1.0 * (num_length + num_angle))};
+      double denominator {2.0 * M_PI * cov.dd * cov.pp};
+
+      probabilities[p_idx] = numerator / denominator;
+      ++p_idx;
+    }
+  }
+}
+
 void Robot::motionModel() {
   while (!odometry_cache_.empty())
   {
@@ -64,14 +108,6 @@ void Robot::motionModel() {
   }
 }
 
-void Robot::targetCallback(const clt_msgs::MeasurementArrayConstPtr& msg) {
-  //target_measurements_ = std::move(target_data::fromRosMsg(msg));
-}
-
-void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
-  landmark_measurements_ = std::move(landmark::fromRosMsg(msg));
-}
-
 int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
   if (landmark_measurements_ == nullptr)
   {
@@ -80,41 +116,7 @@ int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
 
   for (const auto& m: landmark_measurements_->measurements)
   {
-    if (m.seen)
-    {
-      // Save measurement time
-      lastestMeasurementTime = landmark_measurements_->stamp;
-
-      auto cov(landmark::uncertaintyModel(m));
-
-      size_t p_idx {0};
-      for (auto& p: *subparticles)
-      {
-        // All to robot frame in cartesian coordinates
-        double m_x {m.range * cos(m.bearing + p.theta)};
-        double m_y {m.range * sin(m.bearing + p.theta)};
-        double lm_local_x {map->landmarks[m.id].x - p.x};
-        double lm_local_y {map->landmarks[m.id].y - p.y};
-
-        double m_length {sqrt(m_x * m_x + m_y * m_y)};
-        double m_angle {atan2(m_y, m_x)};
-        double lm_length {sqrt(lm_local_x * lm_local_x + lm_local_y * lm_local_y)};
-        double lm_angle {atan2(lm_local_y, lm_local_x)};
-
-        double z_length {m_length - lm_length};
-        double z_angle {m_angle - lm_angle};
-
-        //TODO confirm model
-        // Bivariate Gaussian
-        double num_length {z_length * z_length / (2.0 * cov.dd * cov.dd)};
-        double num_angle {z_angle * z_angle / (2.0 * cov.pp * cov.pp)};
-        double numerator {exp(-1.0 * (num_length + num_angle))};
-        double denominator {2.0 * M_PI * cov.dd * cov.pp};
-
-        probabilities[p_idx] = numerator / denominator;
-        ++p_idx;
-      }
-    }
+    processLandmarkMeasurement(m, probabilities);
   }
 
   return std::count_if(landmark_measurements_->measurements.begin(), landmark_measurements_->measurements.end(),[](const auto& m) {

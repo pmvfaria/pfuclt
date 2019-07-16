@@ -2,16 +2,12 @@
 #define PFUCLT_TARGET_HPP
 
 #include <ros/ros.h>
-#include <ros/callback_queue.h>
 
 #include <random>
 #include <queue>
 #include <cmath>
 
-#include <clt_msgs/Measurement.h>
-
 #include "../particle/particles.hpp"
-#include "../sensor/target_data.hpp"
 
 namespace pfuclt::target {
 
@@ -32,9 +28,6 @@ class Target {
   // name of this target - should end with a number
   const std::string name;
 
-  // pointer to this target's sub-particles
-  particle::TargetSubParticles *subparticles;
-
   double motion_mean;
   double motion_stddev;
 
@@ -46,13 +39,12 @@ class Target {
 
   ros::Time last_motion;
 
-  void processTargetModel();
-
   void initialize();
 
-  void motionModel();
-
  public:
+  // pointer to this target's sub-particles
+  particle::TargetSubParticles *subparticles;
+
   Target() = delete;
   Target(const Target &) = delete; // no copy
   Target(Target &&) = delete; // no move
@@ -66,6 +58,7 @@ class Target {
    */
   Target(uint id, particle::TargetSubParticles* p_subparticles);
 
+  void motionModel();
 };
 
 } // namespace pfuclt::target

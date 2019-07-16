@@ -71,20 +71,6 @@ PFUCLT::PFUCLT(const uint self_robot_id)
   }
 }
 
-void PFUCLT::foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) {
-  if(tag)
-    __gnu_parallel::for_each(robots_.begin(), robots_.end(), f, tag.value());
-  else
-    std::for_each(robots_.begin(), robots_.end(), f);
-}
-
-void PFUCLT::foreach_robot(std::function<void(const std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) const {
-  if(tag)
-    __gnu_parallel::for_each(robots_.begin(), robots_.end(), f, tag.value());
-  else
-    std::for_each(robots_.begin(), robots_.end(), f);
-}
-
 void PFUCLT::predictRobots()
 {
   this->foreach_robot([] (auto &robot) -> void {
@@ -95,7 +81,10 @@ void PFUCLT::predictRobots()
 
 void PFUCLT::predictTargets()
 {
-
+  this->foreach_target([] (auto &target) -> void {
+      target->motionModel();
+    },
+    __gnu_parallel::parallel_unbalanced);
 }
 
 void PFUCLT::fuseLandmarks()
@@ -166,6 +155,34 @@ void PFUCLT::run() {
   }
 
   robot_spinner_->stop();
+}
+
+void PFUCLT::foreach_robot(std::function<void(std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) {
+  if(tag)
+    __gnu_parallel::for_each(robots_.begin(), robots_.end(), f, tag.value());
+  else
+    std::for_each(robots_.begin(), robots_.end(), f);
+}
+
+void PFUCLT::foreach_robot(std::function<void(const std::unique_ptr<::pfuclt::robot::Robot>&)> const& f, const optional_parallel& tag) const {
+  if(tag)
+    __gnu_parallel::for_each(robots_.begin(), robots_.end(), f, tag.value());
+  else
+    std::for_each(robots_.begin(), robots_.end(), f);
+}
+
+void PFUCLT::foreach_target(std::function<void(std::unique_ptr<::pfuclt::target::Target>&)> const& f, const optional_parallel& tag) {
+  if(tag)
+    __gnu_parallel::for_each(targets_.begin(), targets_.end(), f, tag.value());
+  else
+    std::for_each(targets_.begin(), targets_.end(), f);
+}
+
+void PFUCLT::foreach_target(std::function<void(const std::unique_ptr<::pfuclt::target::Target>&)> const& f, const optional_parallel& tag) const {
+  if(tag)
+    __gnu_parallel::for_each(targets_.begin(), targets_.end(), f, tag.value());
+  else
+    std::for_each(targets_.begin(), targets_.end(), f);
 }
 
 } // namespace pfuclt::algorithm
