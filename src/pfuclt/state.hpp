@@ -21,6 +21,8 @@ struct State {
   std::vector<RobotState> robots;
   std::vector<TargetState> targets;
 
+  std::vector<bool> seenTargets;  //TODO: FILL THIS VECTOR
+
   State(size_t num_robots, size_t num_targets);
 };
 
