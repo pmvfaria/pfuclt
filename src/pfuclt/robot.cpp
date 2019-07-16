@@ -98,6 +98,16 @@ void Robot::processLandmarkMeasurement(const landmark::LandmarkMeasurement& m, p
   }
 }
 
+void Robot::processTargetMeasurement(const target_data::TargetMeasurement& m)
+{
+  if (m.seen)
+  {
+    targetsVisibility[m.id] = true;
+
+    // Model
+  }
+}
+
 void Robot::motionModel() {
   while (!odometry_cache_.empty())
   {

@@ -53,7 +53,7 @@ class Robot {
   // subscriber and queue to take odometry messages
   ros::Subscriber odometry_sub_;
   std::queue<odometry::OdometryMeasurement> odometry_cache_;
-public:
+
   // subscriber and pointer to target measurements
   ros::Subscriber target_sub_;
   std::unique_ptr<target_data::TargetMeasurements> target_measurements_;
@@ -62,12 +62,14 @@ public:
   ros::Subscriber landmark_sub_;
   std::unique_ptr<landmark::LandmarkMeasurements> landmark_measurements_;
 
- //public:
+ public:
   // pointer to this robot's sub-particles
   particle::RobotSubParticles *subparticles;
 
   // pointer to landmark map
   const map::LandmarkMap *map;
+
+  std::vector<bool> targetsVisibility; //TODO: INITIALIZE TO ZERO
 
   ros::Time lastestMeasurementTime;
 
@@ -91,6 +93,11 @@ public:
    * @brief Updates probabilities by particle given a landmark measurement
    */
   void processLandmarkMeasurement(const landmark::LandmarkMeasurement&, particle::WeightSubParticles &);
+
+  /**
+   * @brief 
+   */
+  void processTargetMeasurement(const target_data::TargetMeasurement&);
 
   /**
    * @brief Event-driven function that should be called when
