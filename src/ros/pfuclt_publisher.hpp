@@ -1,116 +1,85 @@
-#ifndef PFUCLT_PUBLISHER_H
-#define PFUCLT_PUBLISHER_H
-
-#include "../pfuclt/pfuclt.hpp"
+#ifndef PFUCLT_ROS_PFUCLT_PUBLISHER_HPP
+#define PFUCLT_ROS_PFUCLT_PUBLISHER_HPP
 
 #include <vector>
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <geometry_msgs/PoseArray.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/Point32.h>
-#include <sensor_msgs/PointCloud.h>
-#include <clt_msgs/Estimate.h>
-#include <clt_msgs/Particles.h>
-#include <clt_msgs/SubParticles.h>
-#include <clt_msgs/SubParticle.h>
-#include <clt_msgs/GroundTruth.h>
 
-namespace pfuclt::algorithm{
+#include "ros/ros.h"
+
+#include "clt_msgs/Estimate.h"
+
+namespace pfuclt::algorithm {
     class PFUCLT;
 }
 
 namespace pfuclt::publisher {
 
 /**
- * @brief The publisher class - implents the ROS publishers necessary to the
- * particle filter class (PFUCLT)
+ * @brief The publisher class - implents the ROS publishers for the particle
+ * filter class (PFUCLT)
  */
-class PFUCLTPublisher {
+class PfucltPublisher
+{
+ public:
+  /**
+   * @brief Constructor of the PfucltPublisher class
+   * @param pfuclt Pointer to the particle filter
+   */
+  PfucltPublisher(pfuclt::algorithm::PFUCLT* pfuclt);
 
-public:
-    /**
-     * @brief Constructor of the PFUCLTPublisher class
-     * @params pfuclt Reference to the particle filter
-     */
-    PFUCLTPublisher(::pfuclt::algorithm::PFUCLT& pfuclt);
+  /**
+   * @brief Publish all the necessary information for the rviz visualization
+   */
+  void run();
 
-private:
-    ::pfuclt::algorithm::PFUCLT* pfuclt_;
+ private:
+  // Pointer to particle filter
+  pfuclt::algorithm::PFUCLT* pfuclt_;
 
-    ros::Subscriber groundTruthSubscriber_;
+  ros::NodeHandle nh_{""};
 
-    ros::Publisher particlesPublisher_;
-    ros::Publisher estimatePublisher_;
+  // Target
+  std::vector<ros::Publisher> target_state_publisher_;
+  std::vector<ros::Publisher> target_particles_publisher_;
 
+  // Robot
+  std::vector<ros::Publisher> robot_state_publisher_;
+  std::vector<ros::Publisher> robot_particles_publisher_;
 
-    // Rviz visualization publishers
+  ros::Publisher estimate_publisher_;
+  
+  clt_msgs::Estimate estimate_msg_;
 
-    // Target
-    std::vector<ros::Publisher> targetEstimatedPointPublisher_;
-    std::vector<ros::Publisher> targetGtPointPublisher_;
-    std::vector<ros::Publisher> targetParticlesPublisher_;
-    // Target observations publisher
-    std::vector<ros::Publisher> targetObservationsPublisher_;
+  /**
+   * @brief A series of PoseArray messages, containing the subparticles
+   * for each robot are published.
+   */
+  void publishRobotParticles();
 
-    // Robot
-    std::vector<ros::Publisher> robotEstimatedPosePublisher_;
-    std::vector<ros::Publisher> robotGtPosePublisher_;
-    std::vector<ros::Publisher> robotParticlesPublisher_;
-    // Broadcaster
-    std::vector<tf2_ros::TransformBroadcaster> robotBroadcaster_;
+  /**
+   * @brief A series of PointCloud messages, containing the subparticles
+   * for each target are published.
+   */
+  void publishTargetParticles();
 
-    // Messages
-    clt_msgs::Estimate estimate_;
-    clt_msgs::Particles particles_;
-    clt_msgs::GroundTruth groundTruth_;
+  /**
+   * @brief Publish the state (pose) of each robot and build part of
+   * estimate_msg_
+   */
+  void publishRobotState();
 
-    /**
-     * @brief Build and publish message particles_ with all the robot, target and 
-     * weight subparticles. A series of PoseArray and PointCloud messages for each
-     * robot and target, respectively, are also published.
-     */
-    void publishParticles();
+  /**
+   * @brief Publish the state (point) of each target and build part of
+   * estimate_msg_
+   */
+  void publishTargetState();
 
-    /**
-     * @brief Build message estimate_ for each robot with its estimated pose and
-     * with which targets are visible. Publish the robot pose. The broadcast of
-     * the robots coordinate frames to TF2 is also done.
-     */
-    void publishRobot();
-
-    /**
-     * @brief Build message estimate_ for each target with its estimated point
-     * coordinates and with if it was seen by any robot. Publish the target point
-     * coordinates.
-     */
-    void publishTarget();
-
-    /**
-     * @brief Publish the estimate message, estimate_, partially built in publishRobot
-     * and publishTarget.
-     */
-    void publishEstimate();
-
-    /**
-     * @brief
-     */
-    void publishGt();
-
-    /**
-     * @brief Publish targets in rviz
-     */
-    void publishTargetsObservations();
-
-    /**
-     * @brief Function called when subscribing to ground truth data.
-     */
-    void groundTruthCallback(const clt_msgs::GroundTruth::ConstPtr&);
+  /**
+   * @brief Publish a custom message with each robot's state and its
+   * iteration time and each target's state and its visibility (estimate_msg_)
+   */
+  void publishEstimate();
 };
 
 } // namespace pfuclt::publisher
 
-#endif  //PFUCLT_PUBLISHER_H
+#endif  // PFUCLT_ROS_PFUCLT_PUBLISHER_HPP

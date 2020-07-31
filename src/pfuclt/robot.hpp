@@ -1,117 +1,45 @@
-//
-// Created by glawless on 9/4/18.
-//
+#ifndef PFUCLT_PFUCLT_ROBOT_HPP
+#define PFUCLT_PFUCLT_ROBOT_HPP
 
-#ifndef PFUCLT_ROBOT_HPP
-#define PFUCLT_ROBOT_HPP
-
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
-
+#include <vector>
+#include <array>
+#include <string>
 #include <random>
 #include <queue>
-#include <cmath>
+#include <memory>
 
-#include "../particle/particles.hpp"
-#include "../map/landmark_map.hpp"
-#include "../sensor/odometry_data.hpp"
-#include "../sensor/target_data.hpp"
-#include "../sensor/landmark_data.hpp"
+#include "ros/ros.h"
+
+#include "clt_msgs/CustomOdometry.h"
+#include "clt_msgs/MeasurementArray.h"
+#include "particle/subparticle.hpp"
+#include "particle/particles.hpp"
+#include "map/landmark_map.hpp"
+#include "sensor/odometry_data.hpp"
+#include "sensor/measurements_data.hpp"
+#include "pfuclt/state.hpp"
 
 namespace pfuclt::robot {
 
-using namespace ::pfuclt::sensor;
-
 using generator_type = std::mt19937;
-
 
 /**
  * @brief The Robot class - Has the common variables and methods of all robots,
  * and is the base class of any specialized robots who may derive from it.
  * All robots should be instances of this class
  */
-class Robot {
-
+class Robot
+{
  public:
   // id of this robot - they should start at 0
-  const uint idx;
+  const int idx;
 
   // name of this robot - should end with a number
   const std::string name;
 
- private:
-  std::random_device rd_{};
-  generator_type generator_;
-
-  static constexpr auto name_prefix_ = "robot";
-
-  std::array<double, 4> alphas_;
-
-  // scoped namespace
-  ::ros::NodeHandle nh_;
-
-  // subscriber and queue to take odometry messages
-  ros::Subscriber odometry_sub_;
-  std::queue<odometry::OdometryMeasurement> odometry_cache_;
-
-  // subscriber and pointer to target measurements
-  ros::Subscriber target_sub_;
-  std::unique_ptr<target_data::TargetMeasurements> target_measurements_;
-
-  // subscriber and pointer to landmark measurements
-  ros::Subscriber landmark_sub_;
-  std::unique_ptr<landmark::LandmarkMeasurements> landmark_measurements_;
-
- public:
   // pointer to this robot's sub-particles
-  particle::RobotSubParticles *subparticles;
+  pfuclt::particle::RobotSubparticles *subparticles;
 
-  // pointer to landmark map
-  const map::LandmarkMap *map;
-
-  std::vector<bool> targetsVisibility; //TODO: INITIALIZE TO ZERO
-
-  ros::Time lastestMeasurementTime;
-
- private:
-  void initialize();
-
-  /**
-   * @brief Event-driven function that should be called when
-   * new odometry data is received
-   */
-  void odometryCallback(const clt_msgs::CustomOdometryConstPtr&);
-  /**
-   * @brief Use robot motion model to estimate new particle's state
-   * for this robot.
-   * @details Odometry retrieved in method odometryCallback is used
-   * to calculate the new particle state.
-   */
-  void processOdometryMeasurement(const odometry::OdometryMeasurement&);
-
-  /**
-   * @brief Updates probabilities by particle given a landmark measurement
-   */
-  void processLandmarkMeasurement(const landmark::LandmarkMeasurement&, particle::WeightSubParticles &);
-
-  /**
-   * @brief 
-   */
-  void processTargetMeasurement(const target_data::TargetMeasurement&);
-
-  /**
-   * @brief Event-driven function that should be called when
-   * new target data is received
-   */
-  void targetCallback(const clt_msgs::MeasurementArrayConstPtr&);
-
-  /**
-   * @brief Event-driven function which should be called when
-   * new landmark data is received
-   */
-  void landmarkCallback(const clt_msgs::MeasurementArrayConstPtr&);
-
- public:
   Robot() = delete;
   Robot(const Robot &) = delete; // no copy
   Robot(Robot &&) = delete; // no move
@@ -119,33 +47,146 @@ class Robot {
   Robot& operator=(Robot &&) = delete; // no move assign
 
   /**
-   * Constructor
-   * @param idx the id of this robot (usually should start at 0)
-   * @param subparticles pointer to the subparticles of these robot in a set of particles
-   * @param map pointer to the the landmark map for reference
+   * @brief Constructor of Robot
+   * @param id the id of this robot (usually should start at 0)
+   * @param robot_subparticles pointer to the subparticles of these robot in a set of particles
+   * @param landmark_map pointer to the the landmark map for reference
    */
-  Robot(const uint id, particle::RobotSubParticles* p_subparticles, const map::LandmarkMap* map);
+  Robot(const int id,
+        pfuclt::particle::RobotSubparticles* robot_subparticles,
+        pfuclt::state::State* state,
+        const pfuclt::map::LandmarkMap* landmark_map);
 
   /**
-   * @brief Updates probabilities for each particle taking into account the landmark observations and their known positions
+   * @brief Updates probabilities for each particle taking into account the landmark observations
+   * and their known positions
    * @param probabilities vector of weights to be updated
-   * @return number of landmarks that are currently seen by this robot, or -1 if no landmark measurement was received
+   * @return Whether any landmark was seen by this robot
    */
-  int landmarksUpdate(particle::WeightSubParticles & probabilities);
+  bool landmarksUpdate(pfuclt::particle::WeightSubparticles& probabilities);
 
+  /**
+   * @brief Retrieves target measurement with specified id
+   * @param target_id Id of the target measurement pretended
+   * @return Pointer to target measurement in target_measurements_ or null pointer
+   */
+  const pfuclt::sensor::measurement::Measurement* getTargetMeasurement(const int& target_id) const;
+
+  /**
+   * @brief Computes a probability for each particle given a target measurement
+   * @param target_measurement Target measurement to be used in the computation of the probability
+   * @param robot_particle_idx Index of robot subparticle to be used in the computation of the probability
+   * @param target_subparticle Target subparticle to be used in the computation of the probability
+   * @param probabilities Value to be updated with the computed probability
+   */
+  void processTargetMeasurement(const pfuclt::sensor::measurement::Measurement& target_measurement,
+                                const int& robot_particle_idx,
+                                const pfuclt::particle::TargetSubparticle& target_subparticle,
+                                double& probabilities);
+
+  /**
+   * @brief After using all the landmark measurements to compute an estimate of a probability this
+   * method is called to clear/reset the stored pointer to the landmark measurements
+   */
   void clearLandmarkMeasurements();
 
+  /**
+   * @brief After using all the target measurements to compute an estimate of a probability this
+   * method is called to clear/reset the stored pointer to the target measurements
+   */
+  void clearTargetMeasurements();
 
-  int targetsUpdate();
 
   /**
    * @brief Process all cached odometry messages, sampling the motion model for each particle
+   * @return Boolean of whether the robot subparticles were updated (based on the odometry measurements)
    */
-  void motionModel();
+  bool motionModel();
 
-  //TODO: Robot(std::string name);
+  /**
+   * @brief Computes the next standard deviation to be used in the robot predict step of the algorithm.
+   * @param weights Weights associated with each particle
+   * @details If the weights sum of the first 1/10 particles is smaller than 1E-10, the standard
+   * deviation used in predictRobots() is increased for the next robot predict step.
+   */
+  void computeStdDev(const pfuclt::particle::WeightSubparticles& weights);
+
+
+ private:
+  std::random_device rd_{};
+  generator_type generator_;
+
+  static constexpr auto name_prefix_ = "robot";
+
+  // pointer to landmark map
+  const pfuclt::map::LandmarkMap* map_;
+
+  // pointer to state
+  pfuclt::state::State* state_;
+
+  // Robot specific parameters that specify the noise in robot motion
+  std::vector<double> alphas_;
+
+  // scoped namespace
+  ros::NodeHandle nh_;
+
+  // subscriber and queue to take odometry messages
+  ros::Subscriber odometry_sub_;
+  std::queue<pfuclt::sensor::odometry::OdometryMeasurement> odometry_cache_;
+
+  // subscriber and pointer to target measurements
+  ros::Subscriber target_sub_;
+  std::unique_ptr<pfuclt::sensor::measurement::Measurements> target_measurements_;
+
+  // subscriber and pointer to landmark measurements
+  ros::Subscriber landmark_sub_;
+  std::unique_ptr<pfuclt::sensor::measurement::Measurements> landmark_measurements_;
+  
+
+  /**
+   * @brief Loads the alphas from the parameter server
+   * @details This method is called in the constructor
+   */  
+  void initialize();
+
+  /**
+   * @brief Event-driven method that should be called when
+   * new odometry data is received
+   * @param msg Message read from subscribed topic 
+   */
+  void odometryCallback(const clt_msgs::CustomOdometryConstPtr& msg);
+
+  /**
+   * @brief Event-driven method which should be called when
+   * new landmark data is received
+   * @param msg Message read from subscribed topic 
+   */
+  void landmarkCallback(const clt_msgs::MeasurementArrayConstPtr& msg);
+
+  /**
+   * @brief Event-driven method that should be called when
+   * new target data is received
+   * @param msg Message read from subscribed topic 
+   */
+  void targetCallback(const clt_msgs::MeasurementArrayConstPtr& msg);
+  
+  /**
+   * @brief Uses robot motion model to estimate new particle's state for this robot
+   * @param odometry_measurement odometry measurement retrieved in method odometryCallback
+   * is used to calculate the new particle state
+   */
+  void processOdometryMeasurement(const pfuclt::sensor::odometry::OdometryMeasurement& odometry_measurement);
+
+  /**
+   * @brief Computes a probability for each particle given a landmark measurement
+   * @param landmark_measurement landmark measurement retrieved in method landmarkCallback
+   * is used to calculate the new particle state
+   * @param weight_subparticles Values to be updated with the computed probabilities
+   */
+  void processLandmarkMeasurement(const pfuclt::sensor::measurement::Measurement& landmark_measurement,
+                                  particle::WeightSubparticles & weight_subparticles);
 };
 
 } // namespace pfuclt::robot
 
-#endif //PFUCLT_ROBOT_HPP
+#endif // PFUCLT_PFUCLT_ROBOT_HPP

@@ -1,285 +1,168 @@
 #include "pfuclt_publisher.hpp"
 
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2/LinearMath/Transform.h"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Vector3.h"
+#include "geometry_msgs/TransformStamped.h"
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseArray.h"
+#include "geometry_msgs/PointStamped.h"
+#include "sensor_msgs/PointCloud.h"
+
+#include "pfuclt/pfuclt.hpp"
+#include "pfuclt/state.hpp"
+#include "particle/particles.hpp"
+
+
 namespace pfuclt::publisher {
 
-PFUCLTPublisher::PFUCLTPublisher(::pfuclt::algorithm::PFUCLT& pfuclt)
-    : targetEstimatedPointPublisher_(pfuclt.num_targets),
-      targetGtPointPublisher_(pfuclt.num_targets),
-      targetParticlesPublisher_(pfuclt.num_targets),
-      targetObservationsPublisher_(pfuclt.num_targets),
-      robotEstimatedPosePublisher_(pfuclt.num_robots),
-      robotGtPosePublisher_(pfuclt.num_robots),
-      robotParticlesPublisher_(pfuclt.num_robots),
-      robotBroadcaster_(pfuclt.num_robots) {
+using namespace pfuclt;
 
-    pfuclt_ = &pfuclt;
+PfucltPublisher::PfucltPublisher(algorithm::PFUCLT* pfuclt)  
+  : pfuclt_(pfuclt),
+    target_state_publisher_(pfuclt_->num_targets),
+    target_particles_publisher_(pfuclt_->num_targets),
+    robot_state_publisher_(pfuclt_->num_robots),
+    robot_particles_publisher_(pfuclt_->num_robots)
+{
+  // Robots
+  for (const auto& robot : pfuclt_->robots_) {
+    robot_state_publisher_[robot->idx] =
+        nh_.advertise<geometry_msgs::PoseStamped>(
+            "/robots/" + robot->name + "/estimated_pose", 10);
 
-    // Subscribe to Ground Truth
-    groundTruthSubscriber_ = pfuclt_->nh_.subscribe<clt_msgs::GroundTruth>(
-                            "/groundTruth", 100,
-                            boost::bind(&PFUCLTPublisher::groundTruthCallback, this, _1));
+    robot_particles_publisher_[robot->idx] =
+        nh_.advertise<geometry_msgs::PoseArray>(
+            "/robots/" + robot->name + "/particles", 10);
 
-    estimatePublisher_ = pfuclt_->nh_.advertise<clt_msgs::Estimate>("/estimate", 100);
-    particlesPublisher_ = pfuclt_->nh_.advertise<clt_msgs::Particles>("/particles", 100);
-    
-    // Robots
-    for (auto& robot : pfuclt_->robots_) {
+    // Build estimate message
+    estimate_msg_.robots_estimate.emplace_back(geometry_msgs::PoseStamped());
+  }
 
-        robotEstimatedPosePublisher_[robot->idx] = 
-            pfuclt_->nh_.advertise<geometry_msgs::PoseStamped>(
-                    "/" + robot->name + "/estimatedPose", 100);
+  // Targets
+  for (const auto& target : pfuclt_->targets_) {
+    target_state_publisher_[target->idx] =
+        nh_.advertise<geometry_msgs::PointStamped>(
+            "/targets/" + target->name + "/estimated_point", 10);
 
-        robotGtPosePublisher_[robot->idx] = 
-            pfuclt_->nh_.advertise<geometry_msgs::PoseStamped>(
-                    "/" + robot->name + "/gtPose", 100);
+    target_particles_publisher_[target->idx] =
+        nh_.advertise<sensor_msgs::PointCloud>(
+            "/targets/" + target->name + "/particles", 10);
 
-        robotParticlesPublisher_[robot->idx] =
-            pfuclt_->nh_.advertise<geometry_msgs::PoseArray>(
-                    "/" + robot->name + "/particles", 100);
+    // Build estimate message
+    estimate_msg_.targets_estimate.emplace_back(geometry_msgs::PointStamped());
+    estimate_msg_.targets_visibility.emplace_back(false);
+  }
 
-        // Build estimate msg
-        estimate_.robotEstimates.push_back(clt_msgs::RobotData());
-        for (uint i = 0; i < (uint) pfuclt_->num_targets; i++)
-            estimate_.robotEstimates[robot->idx].targetVisibility.push_back(false);
-    }
-
-    // Targets
-    for (auto& target : pfuclt_->targets_) {
-
-        targetEstimatedPointPublisher_[target->idx] =
-            pfuclt_->nh_.advertise<geometry_msgs::PointStamped>(
-                    "/" + target->name + "/estimatedPoint", 100);
-
-        targetGtPointPublisher_[target->idx] =
-            pfuclt_->nh_.advertise<geometry_msgs::PointStamped>(
-                    "/" + target->name + "/gtPoint", 100);
-
-        targetParticlesPublisher_[target->idx] =
-            pfuclt_->nh_.advertise<sensor_msgs::PointCloud>(
-                    "/" + target->name + "/particles", 100);
-
-        targetObservationsPublisher_[target->idx] = 
-            pfuclt_->nh_.advertise<visualization_msgs::Marker>(
-                    "/" + target->name + "/observations", 100);
-
-        // Build estimate msg
-        estimate_.targetEstimates.push_back(clt_msgs::TargetData());
-    }
-
+  estimate_publisher_ = nh_.advertise<clt_msgs::Estimate>("/estimate", 10);
 }
 
-void PFUCLTPublisher::publishParticles() {
+void PfucltPublisher::publishRobotParticles()
+{
+  // Publish a series of PoseArray messages for each robot
+  for (const auto& robot : pfuclt_->robots_) {
+    geometry_msgs::PoseArray msg_robot_particles;
 
-    // Build message particles_ and fill it with all the particles.
-    // Robot
-    for (uint r = 0; r < (uint) pfuclt_->num_robots; r++) {
-        particle::RobotSubParticles& robotSubParticles = pfuclt_->particles_->robots[r];
+    msg_robot_particles.header.frame_id = "world";
 
-        for (uint p = 0; p < (uint) pfuclt_->num_particles; p++) {
-            particles_.robotSubparticles[r].subparticles[p].subparticle.insert(
-                    particles_.robotSubparticles[r].subparticles[p].subparticle.begin(),
-                    {robotSubParticles[p].x, robotSubParticles[p].y, robotSubParticles[p].theta});
-        }
-    }
-    // Target
-    for (uint t = 0; t < (uint) pfuclt_->num_targets; t++) {
-        particle::TargetSubParticles& targetSubParticles = pfuclt_->particles_->targets[t];
+    particle::RobotSubparticles& robot_subparticles =
+        pfuclt_->particles_->robots[robot->idx];
 
-        for (uint p = 0; p < (uint) pfuclt_->num_particles; p++) {
-            particles_.targetSubparticles[t].subparticles[p].subparticle.insert(
-                    particles_.targetSubparticles[t].subparticles[p].subparticle.begin(),
-                    {targetSubParticles[p].x, targetSubParticles[p].y, targetSubParticles[p].z});
-        }
-    }
-    // Weight
-    for (uint p = 0; p < (uint) pfuclt_->num_particles; p++) {
-        particles_.weigthSubparticles.subparticles[p].subparticle.insert(
-                particles_.weigthSubparticles.subparticles[p].subparticle.begin(),
-                pfuclt_->particles_->weights[p]);
-    }
-    particlesPublisher_.publish(particles_);
-
-
-    // Publish a series of PoseArray messages for each robot
-    for (auto& robot : pfuclt_->robots_) {
-
-        geometry_msgs::PoseArray msgRobotParticles;
-        msgRobotParticles.header.stamp = robot->lastestMeasurementTime;
-        msgRobotParticles.header.frame_id = "world";
-
-        particle::RobotSubParticles& subparticles =
-                        pfuclt_->particles_->robots[robot->idx];
-
-        for (auto& subparticle : subparticles) {
-            // Rotation around z axis with a magnitude of theta rad
-            tf2::Quaternion quaternion(tf2::Vector3(0, 0, 1), subparticle.theta);
-            // Rotation from quaternion & translation from vector
-            tf2::Transform transform(quaternion, tf2::Vector3(subparticle.x,
-                                                              subparticle.y,
-                                                              subparticle.z));
-            geometry_msgs::Pose pose;
-            tf2::toMsg(transform, pose);
-            msgRobotParticles.poses.insert(msgRobotParticles.poses.begin(), pose);
-        }
-
-        robotParticlesPublisher_[robot->idx].publish(msgRobotParticles);
+    for (const auto& subparticle : robot_subparticles) {
+      // Rotation around z axis with a magnitude of yaw rad
+      tf2::Quaternion quaternion(tf2::Vector3(0, 0, 1), subparticle.yaw);
+      // Rotation from quaternion & translation from vector
+      tf2::Transform transform(
+          quaternion, tf2::Vector3(subparticle.x, subparticle.y, subparticle.z));
+      geometry_msgs::Pose pose;
+      tf2::toMsg(transform, pose);
+      msg_robot_particles.poses.insert(msg_robot_particles.poses.begin(), pose);
     }
 
-    // Publish a series of PointCloud messages for each target
-    for (auto& target : pfuclt_->targets_) {
-
-        sensor_msgs::PointCloud msgTargetParticles;
-        msgTargetParticles.header.stamp = ros::Time::now();
-        msgTargetParticles.header.frame_id = "world";
-
-        particle::TargetSubParticles& subparticles =
-                        pfuclt_->particles_->targets[target->idx];
-                        
-        for (auto& subparticle : subparticles) {
-            geometry_msgs::Point32 point;
-            point.x = subparticle.x;
-            point.y = subparticle.y;
-            point.z = subparticle.z;
-
-            msgTargetParticles.points.insert(msgTargetParticles.points.begin(), point);
-        }
-
-        targetParticlesPublisher_[target->idx].publish(msgTargetParticles);
-    }
+    robot_particles_publisher_[robot->idx].publish(msg_robot_particles);
+  }
 }
 
-void PFUCLTPublisher::publishRobot() {
+void PfucltPublisher::publishTargetParticles()
+{
+  // Publish a series of PointCloud messages for each target
+  for (const auto& target : pfuclt_->targets_) {
+    sensor_msgs::PointCloud msg_target_particles;
+    msg_target_particles.header.stamp = target->last_motion;
+    msg_target_particles.header.frame_id = "world";
 
-    for (auto& robot : pfuclt_->robots_) {
+    particle::TargetSubparticles& target_subparticles =
+        pfuclt_->particles_->targets[target->idx];
 
-        estimate_.header.stamp = robot->lastestMeasurementTime;
+    for (const auto& subparticle : target_subparticles) {
+      geometry_msgs::Point32 point;
+      point.x = subparticle.x;
+      point.y = subparticle.y;
+      point.z = subparticle.z;
 
-        clt_msgs::RobotData robotData = estimate_.robotEstimates[robot->idx];
-        state::RobotState& state = pfuclt_->state_->robots[robot->idx];
-
-        // Rotation around z axis with a magnitude of theta rad
-        tf2::Quaternion quaternion(tf2::Vector3(0, 0, 1), state.theta);
-        // Rotation from quaternion & translation from vector
-        tf2::Transform transform(quaternion, tf2::Vector3(state.x, state.y, state.z));
-        
-        tf2::toMsg(transform, robotData.robotPose);
-
-        // Target Visibility
-        for (auto& target : pfuclt_->targets_) {
-            robotData.targetVisibility[target->idx] = robot->targetsVisibility[target->idx];
-        }
-
-        // TF2 Broadcast
-        geometry_msgs::TransformStamped transformStamped;
-        transformStamped.header.stamp = robot->lastestMeasurementTime;
-        transformStamped.header.frame_id = "world";
-        transformStamped.child_frame_id = robot->name;
-        transformStamped.transform = tf2::toMsg(transform);
-        robotBroadcaster_[robot->idx].sendTransform(transformStamped);
-
-        // Publish pose msg using previous TF
-        geometry_msgs::PoseStamped estimatedPose;
-        estimatedPose.header.stamp = transformStamped.header.stamp;
-        estimatedPose.header.frame_id = transformStamped.child_frame_id;
-        // TODO: Pose is everything at 0 as it's the same as the TF ??????
-
-        robotEstimatedPosePublisher_[robot->idx].publish(estimatedPose);
+      msg_target_particles.points.insert(msg_target_particles.points.begin(), point);
     }
+
+    target_particles_publisher_[target->idx].publish(msg_target_particles);
+  }
 }
 
-void PFUCLTPublisher::publishTarget() {
+void PfucltPublisher::publishRobotState()
+{
+  for (const auto& robot : pfuclt_->robots_) {
+    geometry_msgs::PoseStamped& pose_stamped = estimate_msg_.robots_estimate[robot->idx];
 
-    for (auto& target : pfuclt_->targets_) {
+    pose_stamped.header.frame_id = "world";
 
-        state::TargetState& state = pfuclt_->state_->targets[target->idx];
+    const particle::RobotSubparticle& state = pfuclt_->state_->states.robots[robot->idx];
 
-        estimate_.targetEstimates[target->idx].header.frame_id = "world";
+    // Rotation around z axis with a magnitude of yaw rad
+    tf2::Quaternion quaternion(tf2::Vector3(0, 0, 1), state.yaw);
 
-        estimate_.targetEstimates[target->idx].targetPoint.x = state.x;
-        estimate_.targetEstimates[target->idx].targetPoint.y = state.y;
-        estimate_.targetEstimates[target->idx].targetPoint.z = state.z;
-        estimate_.targetEstimates[target->idx].found =
-            pfuclt_->state_->seenTargets[target->idx];
+    // Rotation from quaternion & translation from vector
+    tf2::Transform transform(
+        quaternion, tf2::Vector3(state.x, state.y, state.z));
 
-        // Publish point msg using previous TF
-        geometry_msgs::PointStamped estimatedPoint;
-        estimatedPoint.header.stamp = ros::Time::now();
-        estimatedPoint.header.frame_id = "world";
-        estimatedPoint.point.x = state.x;
-        estimatedPoint.point.y = state.y;
-        estimatedPoint.point.z = state.z;
+    tf2::toMsg(transform, pose_stamped.pose);
 
-        targetEstimatedPointPublisher_[target->idx].publish(estimatedPoint);
-    }
+    robot_state_publisher_[robot->idx].publish(pose_stamped);
+  }
 }
 
-void PFUCLTPublisher::publishEstimate() {
+void PfucltPublisher::publishTargetState()
+{
+  for (const auto& target : pfuclt_->targets_) {
+    geometry_msgs::PointStamped& point_stamped = estimate_msg_.targets_estimate[target->idx];
+    const particle::TargetSubparticle& state = pfuclt_->state_->states.targets[target->idx];
+    const std::vector<bool>& visibility = pfuclt_->state_->targets_visibility[target->idx];
 
-    // TODO: Calculate Computation time
+    estimate_msg_.targets_visibility[target->idx] = std::any_of(visibility.begin(), visibility.end(),
+                                                                [](bool t) { return t == true; });
 
-    estimatePublisher_.publish(estimate_);
+    point_stamped.header.stamp = target->last_motion;
+    point_stamped.header.frame_id = "world";
+    point_stamped.point.x = state.x;
+    point_stamped.point.y = state.y;
+    point_stamped.point.z = state.z;
+    target_state_publisher_[target->idx].publish(point_stamped);
+  }
 }
 
-void PFUCLTPublisher::publishTargetsObservations() {
-
-    for (auto& robot : pfuclt_->robots_) {
-
-        std::vector<sensor::target_data::TargetMeasurement>& measurements = robot->convertMeasurements(); //x,y
-
-        visualization_msgs::Marker marker;
-
-        marker.header.stamp = robot->lastestMeasurementTime;
-        marker.header.frame_id = robot->name;
-
-        marker.type = visualization_msgs::Marker::ARROW;
-        marker.action = visualization_msgs::Marker::ADD;
-
-        // Arrow draw
-        geometry_msgs::Point tail;
-        tail.x = tail.y = tail.z = 0.0;
-        // Point at index 0 - tail tip - is 0,0,0 because we're in the local frame
-        marker.points.push_back(tail);
-        // Point at index 1 - head - is the target pose in the local frame
-        geometry_msgs::Point head;
-        
-        for (auto& target : pfuclt_->targets_) {
-            // Setting the same namespace and id will overwrite the previous marker
-            marker.ns = robot->name + "/" + target->name;
-            marker.id = 0;
-        
-            head.x = measurements[target->idx];
-            head.y = measurements[target->idx];
-            head.z = measurements[target->idx];
-            marker.points.push_back(head);
-
-            marker.scale.x = 0.01;
-            marker.scale.y = 0.03;
-            marker.scale.z = 0.05;
-
-            // Colour
-            marker.color.a = 1;
-            if (measurements[target->idx].seen)
-                marker.color.r = marker.color.g = marker.color.b = 0.6;
-            else {
-                marker.color.r = 1.0;
-                marker.color.g = marker.color.b = 0.0;
-            }
-
-            // Delete marker after 2 seconds
-            marker.lifetime = ros::Duration(2);
-
-            targetObservationsPublisher_[target->idx].publish(marker);
-        }
-    }
+void PfucltPublisher::publishEstimate()
+{
+  // estimate_msg_ has been built in other methods (publishRobotState and publishTargetState)
+  estimate_msg_.iteration_time_ms = pfuclt_->time_iteration_ms_;
+  estimate_publisher_.publish(estimate_msg_);
 }
 
-void PFUCLTPublisher::publishGt() {
-
-    
+void PfucltPublisher::run()
+{
+  publishRobotParticles();
+  publishTargetParticles();
+  publishRobotState();
+  publishTargetState();
+  publishEstimate();
 }
 
-void PFUCLTPublisher::groundTruthCallback(const clt_msgs::GroundTruth::ConstPtr& msg) {
-    groundTruth_ = *msg;
-}
-
-} // namespace pfuclt::publisher
+}  // namespace pfuclt::publisher

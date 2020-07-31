@@ -1,32 +1,48 @@
-//
-// Created by glawless on 8/8/18.
-//
+#include "map/landmark_map.hpp"
 
-#include "landmark_map.hpp"
-#include <ros/param.h>
+#include <stdexcept>
 
-namespace pfuclt::map{
 
-bool Landmark::isInside(const LandmarkMap &map) const{
+namespace pfuclt::map {
+
+bool Landmark::isInside(const LandmarkMap& map) const
+{
   return map.contains(x, y);
 }
 
-std::ostream &operator<<(std::ostream &os, const Landmark &p) {
+
+std::ostream& operator<<(std::ostream& os, const Landmark& p)
+{
   return os << "Landmark " << p.id << " located at {x=" << p.x << ", y=" << p.y << '}';
 }
 
 
-LandmarkMap::LandmarkMap(const double& center_x, const double& center_y, const double& size_x, const double& size_y) :
-    center_x_(center_x), center_y_(center_y) {
-  setSize(size_x, size_y);
+LandmarkMap::LandmarkMap(const double& center_x, const double& center_y,
+                         const double& size_x, const double& size_y)
+  : center_x_(center_x), center_y_(center_y), auto_expandable_(false)
+{
+  if (size_x > 0.0 && size_y > 0.0)
+    setSize(size_x, size_y);
+  else
+    throw std::invalid_argument("Size of landmark map must be positive.");
 }
 
-LandmarkMap& LandmarkMap::setAutoExpand(const bool &expand) {
-  this->auto_expandable = expand;
+
+LandmarkMap& LandmarkMap::setAutoExpand(const bool& expand)
+{
+  auto_expandable_ = expand;
   return *this;
 }
 
-LandmarkMap& LandmarkMap::setSize(const double &size_x, const double &size_y) {
+
+bool LandmarkMap::getAutoExpand() const
+{
+  return auto_expandable_;
+}
+
+
+LandmarkMap& LandmarkMap::setSize(const double& size_x, const double& size_y)
+{
   size_x_ = size_x;
   size_y_ = size_y;
   half_x_ = size_x / 2.0;
@@ -39,41 +55,49 @@ LandmarkMap& LandmarkMap::setSize(const double &size_x, const double &size_y) {
   return *this;
 }
 
-bool LandmarkMap::contains(const double& x, const double& y) const {
-  return x >= limit_x_left_ &&
-         x <= limit_x_right_ &&
-         y >= limit_y_down_ &&
-         y <= limit_y_up_;
+
+bool LandmarkMap::contains(const double& x, const double& y) const
+{
+  return x >= limit_x_left_ && x <= limit_x_right_ &&
+         y >= limit_y_down_ && y <= limit_y_up_;
 }
 
-bool LandmarkMap::addLandmark(const int &id, const double &x, const double &y) {
 
-  if(contains(x, y)) {
-    landmarks.emplace_back(Landmark{id, x, y});
+bool LandmarkMap::addLandmark(const int& id, const double& height,
+                              const double& x, const double& y)
+{
+  if (contains(x, y)) {
+    landmarks.emplace_back(Landmark{id, height, x, y});
     return true;
   }
   else {
-    if(auto_expandable) {
+    if (auto_expandable_) {
       // Increase size of map to contain this landmark at its edge
-      setSize(2*(x - center_x_), 2*(y - center_y_));
-      landmarks.emplace_back(Landmark{id, x, y});
+      setSize(2 * (x - center_x_), 2 * (y - center_y_));
+      landmarks.emplace_back(Landmark{id, height, x, y});
       return true;
     }
-    else return false;
+    else
+      return false;
   }
 }
-std::ostream& LandmarkMap::print(std::ostream &os) const{
+
+
+std::ostream& LandmarkMap::print(std::ostream& os) const
+{
   os << "Landmark map with center {x="  << center_x_ << ", y=" << center_y_ <<
      "}, size {x=" << size_x_ << ", y=" << size_y_ << "}, and landmarks:" << std::endl;
-  for(const auto& l: landmarks) {
+
+  for (const auto& l : landmarks)
     os << '\t' << l << std::endl;
-  }
+
   return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const LandmarkMap &map) {
+
+std::ostream& operator<<(std::ostream& os, const LandmarkMap& map)
+{
   return map.print(os);
 }
-
 
 } // namespace pfuclt::map

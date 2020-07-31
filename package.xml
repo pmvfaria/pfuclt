@@ -8,8 +8,8 @@
 
     <license>GPLv3</license>
 
-    <author email="guilherme.lawless@tecnico.ulisboa.pt">Guilherme Lawless</author>
-    <maintainer email="guilherme.lawless@tecnico.ulisboa.pt">Guilherme Lawless</maintainer>
+    <author email="pedro.m.faria@tecnico.ulisboa.pt">Guilherme Lawless</author>
+    <maintainer email="pedro.m.faria@tecnico.ulisboa.pt">Guilherme Lawless</maintainer>
 
     <buildtool_depend>catkin</buildtool_depend>
 

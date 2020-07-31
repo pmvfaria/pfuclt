@@ -1,146 +1,215 @@
-//
-// Created by glawless on 9/4/18.
-//
+#include "pfuclt/robot.hpp"
 
-#include "robot.hpp"
-#include <random>
-#include <angles/angles.h>
+#include <cmath>
+#include <algorithm>
+
+#include "angles/angles.h"
+
 
 namespace pfuclt::robot {
 
-Robot::Robot(const uint id, particle::RobotSubParticles* p_subparticles, const map::LandmarkMap* p_map)
+using namespace pfuclt;
+
+Robot::Robot(const int id,
+             particle::RobotSubparticles* robot_subparticles,
+             pfuclt::state::State* state,
+             const map::LandmarkMap* landmark_map)
   : idx(id), name(Robot::name_prefix_ + std::to_string(idx+1)),
-  generator_(rd_()), nh_("/robots/"+name),
-  odometry_sub_(nh_.subscribe("/odometry", 100, &Robot::odometryCallback, this)),
-  target_sub_(nh_.subscribe("/target", 100, &Robot::targetCallback, this)),
-  landmark_sub_(nh_.subscribe("/landmark", 100, &Robot::landmarkCallback, this)),
-  subparticles(p_subparticles), map(p_map) {
-
-  this->initialize();
+  subparticles(robot_subparticles), generator_(rd_()), 
+  map_(landmark_map), state_(state), nh_("/robots/"+name),
+  odometry_sub_(nh_.subscribe("odometry", 10, &Robot::odometryCallback, this)),
+  target_sub_(nh_.subscribe("target_measurements", 10, &Robot::targetCallback, this)),
+  landmark_sub_(nh_.subscribe("landmark_measurements", 10, &Robot::landmarkCallback, this))
+{
+  initialize();
 }
 
-void Robot::odometryCallback(const clt_msgs::CustomOdometryConstPtr &msg) {
-  odometry_cache_.emplace(odometry::fromRosCustomMsg(msg));
+void Robot::odometryCallback(const clt_msgs::CustomOdometryConstPtr& msg)
+{
+  odometry_cache_.emplace(sensor::odometry::fromRosCustomMsg(msg));
 }
 
-void Robot::targetCallback(const clt_msgs::MeasurementArrayConstPtr& msg) {
-  target_measurements_ = target_data::fromRosMsg(msg);
+void Robot::targetCallback(const clt_msgs::MeasurementArrayConstPtr& msg)
+{
+  target_measurements_ = sensor::measurement::fromRosMsg(msg);
+
+  for (const auto& m : target_measurements_->measurements) {
+    bool visible = std::any_of(state_->targets_visibility[m.id].begin(),
+                               state_->targets_visibility[m.id].end(),
+                               [](bool r) { return r == true; });
+
+    if (!visible && m.seen == true)
+      state_->targets_found[m.id] = idx;
+    state_->targets_visibility[m.id][idx] = m.seen;
+  }
 }
 
-void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr &msg) {
-  landmark_measurements_ = landmark::fromRosMsg(msg);
+void Robot::landmarkCallback(const clt_msgs::MeasurementArrayConstPtr& msg)
+{
+  landmark_measurements_ = sensor::measurement::fromRosMsg(msg);
 }
 
-void Robot::processOdometryMeasurement(const odometry::OdometryMeasurement &odom){
-  // Robot motion model (from Probabilistic Robotics book)
+void Robot::processOdometryMeasurement(const sensor::odometry::OdometryMeasurement& odom)
+{
+  // Robot motion model (modified from Probabilistic Robotics book)
   std::normal_distribution<double>
-      rot1_rand(
-          odom.initial_rotation,
-          alphas_[0] * fabs(odom.initial_rotation) + alphas_[1] * odom.translation),
+      yaw_rand(
+          odom.delta_yaw,
+          alphas_[0] * std::abs(odom.delta_yaw) + alphas_[1] * odom.delta_translation),
       trans_rand(
-          odom.translation,
-          alphas_[2] * odom.translation + alphas_[3] * fabs(odom.initial_rotation + odom.final_rotation)
-          ),
-      rot2_rand(
-          odom.final_rotation,
-          alphas_[0] * fabs(odom.final_rotation) + alphas_[1] * odom.translation);
+          odom.delta_translation,
+          alphas_[2] * odom.delta_translation + alphas_[3] * std::abs(odom.pitch + odom.delta_yaw));
 
-  {
-    for(auto& particle : *subparticles) {
+  for (auto& subparticle : *subparticles) {
+    const double sample_translation = trans_rand(generator_);
+    subparticle.yaw = angles::normalize_angle(subparticle.yaw + yaw_rand(generator_));
+    subparticle.x += sample_translation * cos(subparticle.yaw) * std::abs(cos(odom.pitch));
+    subparticle.y += sample_translation * sin(subparticle.yaw) * std::abs(cos(odom.pitch));
+    subparticle.z += sample_translation * sin(odom.pitch);
+  }
+}
 
-      // Rotate to final position
-      particle.theta += rot1_rand(generator_);
+void Robot::processLandmarkMeasurement(const sensor::measurement::Measurement& measurement,
+                                       particle::WeightSubparticles& probabilities)
+{
+  static const double pow_2pi_15 = 15.749609945722419;
 
-      // Sample and translate
-      const double sample_translation = trans_rand(generator_);
-      particle.x += sample_translation * cos(particle.theta);
-      particle.y += sample_translation * sin(particle.theta);
+  if (measurement.seen) {
+    sensor::measurement::Likelihood cov(sensor::measurement::uncertaintyModel(measurement));
 
-      // Rotate to final and normalize
-      particle.theta = angles::normalize_angle(particle.theta + rot2_rand(generator_));
+    double denominator {pow_2pi_15 * cov.dd * cov.aa * cov.ee};
+
+    int p = 0;
+    for (const auto& subparticle : *subparticles) {
+
+      // In robot frame
+      // x' = xcos(a)+ysin(a)
+      // y' = -xsin(a)+ycos(a)
+      double expected_distance_x {(map_->landmarks[measurement.id].x - subparticle.x) * std::cos(subparticle.yaw) +
+                                  (map_->landmarks[measurement.id].y - subparticle.y) * std::sin(subparticle.yaw)};
+      double expected_distance_y {-(map_->landmarks[measurement.id].x - subparticle.x) * std::sin(subparticle.yaw) +
+                                  (map_->landmarks[measurement.id].y - subparticle.y) * std::cos(subparticle.yaw)};
+      double expected_distance_z {map_->landmarks[measurement.id].height - subparticle.z};
+
+      double expected_distance {std::sqrt(expected_distance_x * expected_distance_x +
+                                          expected_distance_y * expected_distance_y + 
+                                          expected_distance_z * expected_distance_z)};
+      double expected_azimuth {std::atan2(expected_distance_y, expected_distance_x)};
+      double expected_elevation {std::asin(expected_distance_z / expected_distance)};
+
+      double error_distance {measurement.distance - expected_distance};
+      double error_azimuth {angles::normalize_angle(measurement.azimuth - expected_azimuth)};
+      double error_elevation {angles::normalize_angle(measurement.elevation - expected_elevation)};
+      
+      // Multivariate Gaussian Distribution
+      double numerator_distance {error_distance * error_distance / (cov.dd * cov.dd)};
+      double numerator_azimuth {error_azimuth * error_azimuth / (cov.aa * cov.aa)};
+      double numerator_elevation {error_elevation * error_elevation / (cov.ee * cov.ee)};
+      double numerator {std::exp(-0.5 * (numerator_distance + numerator_azimuth + numerator_elevation))};
+
+      probabilities[p] *= numerator / denominator;
+      ++p;
     }
   }
 }
 
-void Robot::processLandmarkMeasurement(const landmark::LandmarkMeasurement& m, particle::WeightSubParticles & probabilities)
+void Robot::processTargetMeasurement(const sensor::measurement::Measurement& measurement,
+                                     const int& robot_particle_idx,
+                                     const particle::TargetSubparticle& target_subparticle,
+                                     double& probabilities)
 {
-  if (m.seen)
-  {
-    // TODO this seems to be used for publishing ROS messages, find a better way
-    // Save measurement time
-    lastestMeasurementTime = landmark_measurements_->stamp;
+  static const double pow_2pi_15 = 15.749609945722419;
 
-    auto cov(landmark::uncertaintyModel(m));
+  if (measurement.seen) {
+    sensor::measurement::Likelihood cov(sensor::measurement::uncertaintyModel(measurement));
 
-    size_t p_idx {0};
-    for (auto& p: *subparticles)
-    {
-      // All to robot frame in cartesian coordinates
-      double lm_local_x {map->landmarks[m.id].x - p.x};
-      double lm_local_y {map->landmarks[m.id].y - p.y};
+    const auto& robot_subparticle = (*subparticles)[robot_particle_idx];
 
-      double lm_length {sqrt(lm_local_x * lm_local_x + lm_local_y * lm_local_y)};
-      double lm_angle {atan2(lm_local_y, lm_local_x)};
+    // In robot frame
+    // x' = xcos(a)+ysin(a)
+    // y' = -xsin(a)+ycos(a)
+    double expected_distance_x {(target_subparticle.x - robot_subparticle.x) * std::cos(robot_subparticle.yaw) +
+                                (target_subparticle.y - robot_subparticle.y) * std::sin(robot_subparticle.yaw)};
+    double expected_distance_y {-(target_subparticle.x - robot_subparticle.x) * std::sin(robot_subparticle.yaw) +
+                                (target_subparticle.y - robot_subparticle.y) * std::cos(robot_subparticle.yaw)};
+    double expected_distance_z {target_subparticle.z - robot_subparticle.z};
 
-      double z_length {m.range - lm_length};
-      double z_angle {m.bearing - lm_angle};
+    double expected_distance {std::sqrt(expected_distance_x * expected_distance_x +
+                                        expected_distance_y * expected_distance_y +
+                                        expected_distance_z * expected_distance_z)};
+    double expected_azimuth {std::atan2(expected_distance_y, expected_distance_x)};
+    double expected_elevation {std::asin(expected_distance_z / expected_distance)};
 
-      //TODO confirm model
-      // Bivariate Gaussian
-      double num_length {z_length * z_length / (2.0 * cov.dd * cov.dd)};
-      double num_angle {z_angle * z_angle / (2.0 * cov.pp * cov.pp)};
-      double numerator {exp(-1.0 * (num_length + num_angle))};
-      double denominator {2.0 * M_PI * cov.dd * cov.pp};
+    double error_distance {measurement.distance - expected_distance};
+    double error_azimuth {angles::normalize_angle(measurement.azimuth - expected_azimuth)};
+    double error_elevation {angles::normalize_angle(measurement.elevation - expected_elevation)};
 
-      probabilities[p_idx] = numerator / denominator;
-      ++p_idx;
-    }
+    // Multivariate Gaussian Distribution
+    double numerator_distance {error_distance * error_distance / (cov.dd * cov.dd)};
+    double numerator_azimuth {error_azimuth * error_azimuth / (cov.aa * cov.aa)};
+    double numerator_elevation {error_elevation * error_elevation / (cov.ee * cov.ee)};
+    double numerator {std::exp(-0.5 * (numerator_distance + numerator_azimuth + numerator_elevation))};
+    double denominator {pow_2pi_15 * cov.dd * cov.aa * cov.ee};
+
+    probabilities *= numerator / denominator;
   }
 }
 
-void Robot::processTargetMeasurement(const target_data::TargetMeasurement& m)
+bool Robot::landmarksUpdate(particle::WeightSubparticles& probabilities)
 {
-  if (m.seen)
-  {
-    targetsVisibility[m.id] = true;
-
-    // Model
-  }
-}
-
-void Robot::motionModel() {
-  while (!odometry_cache_.empty())
-  {
-    // Retrieve oldest element from queue
-    auto odom = odometry_cache_.front();
-    odometry_cache_.pop();
-    processOdometryMeasurement(odom);
-  }
-}
-
-int Robot::landmarksUpdate(particle::WeightSubParticles& probabilities) {
   if (landmark_measurements_ == nullptr)
-  {
-    return -1;
-  }
+    return false;
 
-  for (const auto& m: landmark_measurements_->measurements)
-  {
-    processLandmarkMeasurement(m, probabilities);
-  }
+  for (const auto& measurement : landmark_measurements_->measurements)
+    processLandmarkMeasurement(measurement, probabilities);
 
-  return std::count_if(landmark_measurements_->measurements.begin(), landmark_measurements_->measurements.end(),[](const auto& m) {
-    return m.seen;
-  });
+  bool landmark_seen = std::any_of(landmark_measurements_->measurements.begin(),
+                                   landmark_measurements_->measurements.end(),
+                                   [](const auto& l) { return l.seen; });
+
+  return landmark_seen;
+}
+
+const sensor::measurement::Measurement* Robot::getTargetMeasurement(const int& target_id) const
+{
+  if (target_measurements_ == nullptr)
+    return nullptr;
+
+  const auto& ms = target_measurements_->measurements;
+  
+  const auto measurement = std::find_if(ms.begin(), ms.end(),
+                                        [&target_id](const auto& m) { return m.id == target_id; });
+
+  if (measurement != ms.end())
+    return &(*measurement);
+  else
+    return nullptr;
 }
 
 void Robot::clearLandmarkMeasurements()
 {
   if (landmark_measurements_ != nullptr)
-  {
     landmark_measurements_.reset();
-  }
 }
 
+void Robot::clearTargetMeasurements()
+{
+  if (target_measurements_ != nullptr)
+    target_measurements_.reset();
+}
 
+bool Robot::motionModel()
+{
+  if (odometry_cache_.empty())
+    return false;
+
+  while (!odometry_cache_.empty()) {
+    // Retrieve oldest element from queue
+    const auto& odom = odometry_cache_.front();
+    processOdometryMeasurement(odom);
+    odometry_cache_.pop();
+  }
+
+  return true;
+}
 } // namespace pfuclt::robot

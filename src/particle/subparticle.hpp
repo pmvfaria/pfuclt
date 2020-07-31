@@ -1,42 +1,52 @@
-#ifndef PFUCLT_SUBPARTICLE_HPP
-#define PFUCLT_SUBPARTICLE_HPP
+#ifndef PFUCLT_PARTICLE_SUBPARTICLE_HPP
+#define PFUCLT_PARTICLE_SUBPARTICLE_HPP
 
 #include <vector>
-#include <array>
-#include <cassert>
+	
 
-namespace pfuclt::particle{
+namespace pfuclt::particle {
 
-/** @template SubParticle
+/** @template Subparticle
   * @brief Stores the number of states of the subparticle
   */
 template <int STATES>
-struct SubParticle{
-  static constexpr std::size_t number_states{STATES};
+struct Subparticle
+{
+  static constexpr int number_states{STATES};
 };
 
-/** @class RobotSubParticle
+/** @class RobotSubparticle
   * @brief Derived class from Subparticle class. Stores the position of a robot subparticle
   */
-struct RobotSubParticle: public SubParticle<3>{
-  RobotSubParticle() = default;
-  RobotSubParticle(double x_a, double y_a, double theta_a) : SubParticle(), x(x_a), y(y_a), theta(theta_a) { };
-  double x, y, theta;
+struct RobotSubparticle: public Subparticle<4>
+{
+  RobotSubparticle() = default;
+  RobotSubparticle(double x_a, double y_a, double z_a, double yaw_a);
+    
+  double x, y, z, yaw;
+
+  double& operator[](int i);
+  const double& operator[](int i) const;
 };
 
-/** @class TargetSubParticle
+/** @class TargetSubparticle
   * @brief Derived class from Subparticle class. Stores the position of a target subparticle
   */
-struct TargetSubParticle: public SubParticle<3>{
-  TargetSubParticle() = default;
-  TargetSubParticle(double x_a, double y_a, double z_a) : SubParticle(), x(x_a), y(y_a), z(z_a){ };
+struct TargetSubparticle: public Subparticle<3>
+{
+  TargetSubparticle() = default;
+  TargetSubparticle(double x_a, double y_a, double z_a);
+
   double x, y, z;
+
+  double& operator[](int i);
+  const double& operator[](int i) const;
 };
 
-typedef std::vector<RobotSubParticle> RobotSubParticles;
-typedef std::vector<TargetSubParticle> TargetSubParticles;
-typedef std::vector<double> WeightSubParticles;
+typedef std::vector<RobotSubparticle> RobotSubparticles;
+typedef std::vector<TargetSubparticle> TargetSubparticles;
+typedef std::vector<double> WeightSubparticles;
 
 } // namespace pfuclt::particle
 
-#endif //PFUCLT_SUBPARTICLE_HPP
+#endif // PFUCLT_PARTICLE_SUBPARTICLE_HPP

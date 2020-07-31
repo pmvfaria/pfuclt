@@ -1,131 +1,169 @@
-//
-// Created by glawless on 8/27/18.
-//
-
 #include "state.hpp"
-#include <exception>
+
 #include <numeric>
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 
 namespace pfuclt::state {
 
-State::State(const size_t num_robots, const size_t num_targets) : robots(num_robots), targets(num_targets) {
-  // Nothing to do
+using namespace pfuclt::particle;
+
+State::State(pfuclt::particle::Particles* particles)
+  : targets_visibility(particles->targets.size(), std::vector<bool>(particles->robots.size(), false)),
+    targets_found(particles->targets.size(), -1), particles_(particles)
+{
+  states.robots.resize(particles_->robots.size());
+  states.targets.resize(particles_->targets.size());
+
+  for (RobotSubparticle& robot : states.robots)
+    for (int s = 0; s < robot.number_states; ++s)
+      robot[s] = 0.0;
+
+  for (TargetSubparticle& target : states.targets)
+    for (int s = 0; s < target.number_states; ++s)
+      target[s] = 0.0;
 }
 
-void _estimate_avg_impl(const Particles &particles, State &state) {
+void State::estimateAvg()
+{
+  int r = 0;
+  particles_->forEachRobot([&r, this] (const RobotSubparticles& robot_subparticles) -> void
+  {
+    auto& robot_state = this->states.robots[r];
 
-  //TODO: check this actually cycles through the robots (r, r+1, ...)
-  particles.foreach_robot([r=0, &state] (const auto &p_r) mutable -> void {
-    auto &robot_state = state.robots[r];
-    ++r;
+    robot_state.x = std::accumulate(robot_subparticles.begin(), robot_subparticles.end(), 0.0,
+                                   [](double sum, const RobotSubparticle& subparticle) {
+      return sum + subparticle.x;
+    }) / robot_subparticles.size();
 
-    robot_state.x = std::accumulate(p_r.begin(), p_r.end(), 0.0, [&](double sum, const RobotSubParticle &rsp) {
-      return sum + rsp.x;
-    }) / p_r.size();
+    robot_state.y = std::accumulate(robot_subparticles.begin(), robot_subparticles.end(), 0.0,
+                                   [](double sum, const RobotSubparticle& subparticle) {
+      return sum + subparticle.y;
+    }) / robot_subparticles.size();
 
-    robot_state.y = std::accumulate(p_r.begin(), p_r.end(), 0.0, [&](double sum, const RobotSubParticle &rsp) {
-      return sum + rsp.y;
-    }) / p_r.size();
+    robot_state.z = std::accumulate(robot_subparticles.begin(), robot_subparticles.end(), 0.0,
+                                   [](double sum, const RobotSubparticle& subparticle) {
+      return sum + subparticle.z;
+    }) / robot_subparticles.size();
 
-    // Theta as mean of circular quantities
-    double sum_theta_cos{0.0}, sum_theta_sin{0.0};
-    for (const RobotSubParticle &rsp: p_r) {
-      sum_theta_cos += cos(rsp.theta);
-      sum_theta_sin += sin(rsp.theta);
+    // Yaw as mean of circular quantities
+    double sum_yaw_cos{0.0}, sum_yaw_sin{0.0};
+    for (const RobotSubparticle& subparticle : robot_subparticles) {
+      sum_yaw_cos += cos(subparticle.yaw);
+      sum_yaw_sin += sin(subparticle.yaw);
     }
 
     // Convert back to polar
-    robot_state.theta = atan2(sum_theta_sin / p_r.size(), sum_theta_cos / p_r.size());
+    robot_state.yaw = std::atan2(sum_yaw_sin / robot_subparticles.size(),
+                                   sum_yaw_cos / robot_subparticles.size());
+
+    ++r;
   });
 
-  particles.foreach_target([t=0, &state] (const TargetSubParticles &p_t) mutable -> void {
+  int t = 0;
+  particles_->forEachTarget([&t, this] (const TargetSubparticles &target_subparticles) -> void
+  {
+    auto& target_state = this->states.targets[t];
 
-    auto &target_state = state.targets[t];
+    target_state.x = std::accumulate(target_subparticles.begin(), target_subparticles.end(), 0.0,
+                                    [](double sum, const TargetSubparticle& subparticle) {
+      return sum + subparticle.x;
+    }) / target_subparticles.size();
+
+    target_state.y = std::accumulate(target_subparticles.begin(), target_subparticles.end(), 0.0,
+                                    [](double sum, const TargetSubparticle& subparticle) {
+      return sum + subparticle.y;
+    }) / target_subparticles.size();
+
+    target_state.z = std::accumulate(target_subparticles.begin(), target_subparticles.end(), 0.0,
+                                    [](double sum, const TargetSubparticle& subparticle) {
+      return sum + subparticle.z;
+    }) / target_subparticles.size();
+
     ++t;
-
-    target_state.x = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
-      return sum + tsp.x;
-    }) / p_t.size();
-
-    target_state.y = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
-      return sum + tsp.y;
-    }) / p_t.size();
-
-    target_state.z = std::accumulate(p_t.begin(), p_t.end(), 0.0, [](double sum, const TargetSubParticle &tsp) {
-      return sum + tsp.z;
-    }) / p_t.size();
   });
 }
 
-void _estimate_weighted_avg_impl(const Particles &particles, State &state) {
-  const auto normalized_weights = particles.getNormalizedWeightsCopy();
 
-  particles.foreach_robot([&, r=0] (const RobotSubParticles& p_r) mutable -> void {
+void State::estimateWeightedAvg()
+{
+  const auto normalized_weights = particles_->getNormalizedWeightsCopy();
+  
+  int r = 0;
+  particles_->forEachRobot([&, this](const RobotSubparticles& robot_subparticles) mutable -> void
+  {
+    auto& robot_state = this->states.robots[r];
 
-    auto &robot_state = state.robots[r];
-    ++r;
+    // Reset to zeros
+    for (int s = 0; s < robot_state.number_states; s++)
+      robot_state[s] = 0.0;
 
-    // Theta as mean of circular quantities
-    double sum_theta_cos{0.0}, sum_theta_sin{0.0};
+    // Yaw as mean of circular quantities
+    double sum_yaw_cos{0.0}, sum_yaw_sin{0.0};
 
-    std::for_each(p_r.begin(), p_r.end(), [&, idx=0] (const auto &rsp) mutable -> void {
-      const auto weight = normalized_weights[idx];
+    int idx = 0;
+    std::for_each(robot_subparticles.begin(), robot_subparticles.end(),
+                  [&](const RobotSubparticle& subparticle) mutable -> void
+    {
+      const auto& weight = normalized_weights[idx];
       if (weight != 0.0) {
-        robot_state.x += rsp.x * weight;
-        robot_state.y += rsp.y * weight;
-        sum_theta_cos += cos(rsp.theta) * weight;
-        sum_theta_sin += sin(rsp.theta) * weight;
+        robot_state.x += subparticle.x * weight;
+        robot_state.y += subparticle.y * weight;
+        robot_state.z += subparticle.z * weight;
+        sum_yaw_cos += std::cos(subparticle.yaw) * weight;
+        sum_yaw_sin += std::sin(subparticle.yaw) * weight;
       }
+
+      ++idx;
     });
 
     // Convert back to polar
-    state.robots[r].theta = atan2(sum_theta_sin, sum_theta_cos);
-  });
+    robot_state.yaw = std::atan2(sum_yaw_sin, sum_yaw_cos);
 
-  particles.foreach_target([&, t=0] (const TargetSubParticles& p_t) mutable -> void {
+    ++r;
+    
+  }, __gnu_parallel::parallel_unbalanced);
 
-    auto &target_state = state.targets[t];
-    ++t;
+  int t = 0;
+  particles_->forEachTarget([&, this](const TargetSubparticles& target_subparticles) mutable -> void
+  {
+    auto& target_state = this->states.targets[t];
 
-    std::for_each(p_t.begin(), p_t.end(), [&, idx=0] (const auto &tsp) mutable -> void {
+    // Reset to zeros
+    for (int s = 0; s < target_state.number_states; s++)
+      target_state[s] = 0.0;
 
-      const auto weight = normalized_weights[idx];
-      if(weight != 0.0) {
-        target_state.x += tsp.x * weight;
-        target_state.y += tsp.y * weight;
-        target_state.z += tsp.z * weight;
+    int idx = 0;
+    std::for_each(target_subparticles.begin(), target_subparticles.end(),
+                  [&](const TargetSubparticle& subparticle) mutable -> void
+    {
+      const auto& weight = normalized_weights[idx];
+      if (weight != 0.0) {
+        target_state.x += subparticle.x * weight;
+        target_state.y += subparticle.y * weight;
+        target_state.z += subparticle.z * weight;
       }
       ++idx;
     });
-  });
+
+    ++t;
+
+  }, __gnu_parallel::parallel_unbalanced);
 }
 
-void _estimate_max_weight_impl(const Particles &particles, State &state) {
 
+void State::estimateMaxWeight()
+{
   // Get index of max weight particle
-  const auto idx = std::distance(particles.weights.begin(), std::max_element(particles.weights.begin(), particles.weights.end()));
+  const auto idx = std::distance(particles_->weights.begin(),
+                                 std::max_element(particles_->weights.begin(), particles_->weights.end()));
 
-  for(uint r=0; r < state.robots.size(); ++r) {
-    state.robots[r] = particles.robots[r][idx];
-  }
+  for (size_t r = 0; r < states.robots.size(); ++r)
+    states.robots[r] = particles_->robots[r][idx];
 
-  for(uint t=0; t < state.targets.size(); ++t) {
-    state.targets[t] = particles.targets[t][idx];
-  }
+  for (size_t t = 0; t < states.targets.size(); ++t)
+    states.targets[t] = particles_->targets[t][idx];
 }
 
-State estimateState(const Particles &particles, const StateCalculation opt) {
-
-  State state(particles.robots.size(), particles.targets.size());
-
-  switch(opt) {
-    case StateCalculation::AVERAGE : _estimate_avg_impl(particles, state); break;
-    case StateCalculation::WEIGHTED_AVERAGE : _estimate_weighted_avg_impl(particles, state); break;
-    case StateCalculation::MAX_WEIGHT : _estimate_max_weight_impl(particles, state); break;
-  }
-
-  return state;
-}
 } // namespace pfuclt::state
