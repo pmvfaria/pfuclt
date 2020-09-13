@@ -1,9 +1,0 @@
-# IDE files
-.idea/
-.vscode/
-cmake-build-debug/
-CMakeCache.txt
-CMakeFiles/
-
-# Python byte code
-*.pyc
